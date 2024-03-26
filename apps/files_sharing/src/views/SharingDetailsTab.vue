@@ -156,22 +156,6 @@
 						data-cy-files-sharing-share-permissions-checkbox="download">
 						{{ t('files_sharing', 'Allow download') }}
 					</NcCheckboxRadioSwitch>
-					<NcCheckboxRadioSwitch :checked.sync="writeNoteToRecipientIsChecked">
-						{{ t('files_sharing', 'Note to recipient') }}
-					</NcCheckboxRadioSwitch>
-					<template v-if="writeNoteToRecipientIsChecked">
-						<label for="share-note-textarea">
-							{{ t('files_sharing', 'Enter a note for the share recipient') }}
-						</label>
-						<textarea id="share-note-textarea" :value="share.note" @input="share.note = $event.target.value" />
-					</template>
-					<ExternalShareAction v-for="action in externalLinkActions"
-						:id="action.id"
-						ref="externalLinkActions"
-						:key="action.id"
-						:action="action"
-						:file-info="fileInfo"
-						:share="share" />
 					<NcCheckboxRadioSwitch :checked.sync="setCustomPermissions">
 						{{ t('files_sharing', 'Custom permissions') }}
 					</NcCheckboxRadioSwitch>
