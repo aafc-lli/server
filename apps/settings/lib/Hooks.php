@@ -231,7 +231,7 @@ class Hooks {
 			if ($user->getEMailAddress()) {
 				$template->addBodyText($l->t('The new email address is %s', [$user->getEMailAddress()]));
 				// -- TODO - remove hardcoded email, url and app name; get from conf file in theme
-				// -- XXXCDSP custom email body -- start
+				// -- XXX CDSP custom email body -- start
 				$template->addBodyText($this->l->t("Le français suit"));
 
 				$template->addBodyText($this->l->t("This is an automated message. Please do not reply to this email address."));
