@@ -149,15 +149,6 @@
 					<NcCheckboxRadioSwitch v-if="!isPublicShare" :disabled="!canSetDownload" :checked.sync="canDownload">
 						{{ t('files_sharing', 'Allow download') }}
 					</NcCheckboxRadioSwitch>
-					<NcCheckboxRadioSwitch :checked.sync="writeNoteToRecipientIsChecked">
-						{{ t('files_sharing', 'Note to recipient') }}
-					</NcCheckboxRadioSwitch>
-					<template v-if="writeNoteToRecipientIsChecked">
-						<label for="share-note-textarea">
-							{{ t('files_sharing', 'Enter a note for the share recipient') }}
-						</label>
-						<textarea id="share-note-textarea" :value="share.note" @input="share.note = $event.target.value" />
-					</template>
 					<NcCheckboxRadioSwitch :checked.sync="setCustomPermissions">
 						{{ t('files_sharing', 'Custom permissions') }}
 					</NcCheckboxRadioSwitch>
