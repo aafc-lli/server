@@ -59,7 +59,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<span>{{ t('settings', 'The file must be a PNG or JPG') }}</span>
+				<span>{{ t('settings', 'png or jpg, max. 5 MB') }}</span>
 				<input ref="input"
 					type="file"
 					:accept="validMimeTypes.join(',')"
