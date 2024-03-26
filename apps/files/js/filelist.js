@@ -393,7 +393,23 @@
 			});
 
 			this.$fileList.on('droppedOnTrash', function (event, filename, directory) {
-				self.do_delete(filename, directory);
+				// -- XXX CDSP -- start
+				OC.dialogs.confirmDestructive(
+					t('files_external', 'Are you sure you want to delete the file(s)?'),
+					t('files_external', 'Delete File?'), {
+						type: OC.dialogs.YES_NO_BUTTONS,
+						confirm: t('files_external', 'Delete'),
+						confirmClasses: 'error',
+						cancel: t('files_external', 'Cancel')
+					},
+					(decision) => {
+						if (!decision) {
+							return
+						}
+						self.do_delete(filename, directory);
+					}
+				)
+				// -- XXX CDSP -- end
 			});
 
 			this.$fileList.on('change', 'td.selection>.selectCheckBox', _.bind(this._onClickFileCheckbox, this));
@@ -549,12 +565,42 @@
 					return;
 				}
 				switch (action) {
+					// -- XXX CDSP -- start
 					case 'delete':
 						this._onClickDeleteSelected(ev)
+						OC.dialogs.confirmDestructive(
+							t('files_external', 'Are you sure you want to delete the file(s)?'),
+							t('files_external', 'Delete File?'), {
+								type: OC.dialogs.YES_NO_BUTTONS,
+								confirm: t('files_external', 'Delete'),
+								confirmClasses: 'error',
+								cancel: t('files_external', 'Cancel')
+							},
+							(decision) => {
+								if (!decision) {
+									return
+								}
+								this._onClickDeleteSelectedM(ev);
+							}
+						)					
 						break;
 					case 'download':
-						this._onClickDownloadSelected(ev);
+						OC.dialogs.confirmDestructive(
+							t('files_external', 'Proceed with download?'),
+							t('files_external', 'Download'), {
+								type: OC.dialogs.YES_NO_BUTTONS,
+								confirm: t('files_external', 'Yes'),
+								cancel: t('files_external', 'No')
+							},
+							(decision) => {
+								if (!decision) {
+									return
+								}
+								this._onClickDownloadSelected(ev);
+							}
+						)
 						break;
+						// -- XXX CDSP -- end
 					case 'copyMove':
 						this._onClickCopyMoveSelected(ev);
 						break;
