@@ -393,23 +393,7 @@
 			});
 
 			this.$fileList.on('droppedOnTrash', function (event, filename, directory) {
-				// -- XXX CDSP -- start
-				OC.dialogs.confirmDestructive(
-					t('files_external', 'Are you sure you want to delete the file(s)?'),
-					t('files_external', 'Delete File?'), {
-						type: OC.dialogs.YES_NO_BUTTONS,
-						confirm: t('files_external', 'Delete'),
-						confirmClasses: 'error',
-						cancel: t('files_external', 'Cancel')
-					},
-					(decision) => {
-						if (!decision) {
-							return
-						}
-						self.do_delete(filename, directory);
-					}
-				)
-				// -- XXX CDSP -- end
+				self.do_delete(filename, directory);
 			});
 
 			this.$fileList.on('change', 'td.selection>.selectCheckBox', _.bind(this._onClickFileCheckbox, this));
@@ -567,22 +551,7 @@
 				switch (action) {
 					// -- XXX CDSP -- start
 					case 'delete':
-						this._onClickDeleteSelected(ev)
-						OC.dialogs.confirmDestructive(
-							t('files_external', 'Are you sure you want to delete the file(s)?'),
-							t('files_external', 'Delete File?'), {
-								type: OC.dialogs.YES_NO_BUTTONS,
-								confirm: t('files_external', 'Delete'),
-								confirmClasses: 'error',
-								cancel: t('files_external', 'Cancel')
-							},
-							(decision) => {
-								if (!decision) {
-									return
-								}
-								this._onClickDeleteSelectedM(ev);
-							}
-						)					
+						this._onClickDeleteSelected(ev)				
 						break;
 					case 'download':
 						OC.dialogs.confirmDestructive(
@@ -3288,6 +3257,19 @@
 		 * directory
 		 */
 		do_delete:function(files, dir) {
+			OC.dialogs.confirmDestructive(
+				t('files_external', 'Are you sure you want to delete the file(s)?'),
+				t('files_external', 'Delete File?'), {
+					type: OC.dialogs.YES_NO_BUTTONS,
+					confirm: t('files_external', 'Delete'),
+					confirmClasses: 'error',
+					cancel: t('files_external', 'Cancel')
+				},
+				(decision) => {
+					if (!decision) {
+						return
+					}
+	
 			var self = this;
 			if (files && files.substr) {
 				files=[files];
@@ -3333,6 +3315,8 @@
 					self.updateStorageStatistics();
 					self.updateStorageQuotas();
 				});
+			}
+			)
 		},
 
 		/**
