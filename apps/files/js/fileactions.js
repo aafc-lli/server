@@ -634,25 +634,40 @@
 				permissions: OC.PERMISSION_READ,
 				iconClass: 'icon-download',
 				actionHandler: function (filename, context) {
-					var dir = context.dir || context.fileList.getCurrentDirectory();
-					var isDir = context.$file.attr('data-type') === 'dir';
-					var url = context.fileList.getDownloadUrl(filename, dir, isDir);
-
-					var downloadFileaction = $(context.$file).find('.fileactions .action-download');
-
-					// don't allow a second click on the download action
-					if(downloadFileaction.hasClass('disabled')) {
-						return;
-					}
-
-					if (url) {
-						var disableLoadingState = function() {
-							context.fileList.showFileBusyState(filename, false);
-						};
-
-						context.fileList.showFileBusyState(filename, true);
-						OCA.Files.Files.handleDownload(url, disableLoadingState);
-					}
+					// XXX CDSP -- confirm download start
+					OC.dialogs.confirmDestructive(
+						t('files_external', 'Proceed with download?'),
+								t('files_external', 'Download'), {
+									type: OC.dialogs.YES_NO_BUTTONS,
+									confirm: t('files_external', 'Yes'),
+									cancel: t('files_external', 'No')
+								},
+						(decision) => {
+							if (!decision) {
+								return
+							}
+							var dir = context.dir || context.fileList.getCurrentDirectory();
+							var isDir = context.$file.attr('data-type') === 'dir';
+							var url = context.fileList.getDownloadUrl(filename, dir, isDir);
+		
+							var downloadFileaction = $(context.$file).find('.fileactions .action-download');
+		
+							// don't allow a second click on the download action
+							if(downloadFileaction.hasClass('disabled')) {
+								return;
+							}
+		
+							if (url) {
+								var disableLoadingState = function() {
+									context.fileList.showFileBusyState(filename, false);
+								};
+		
+								context.fileList.showFileBusyState(filename, true);
+								OCA.Files.Files.handleDownload(url, disableLoadingState);
+							}
+						}
+					)
+					// XXX CDSP -- confirm download end
 				}
 			});
 
@@ -787,7 +802,8 @@
 					if (mountType === 'external-root') {
 						deleteTitle = t('files', 'Disconnect storage');
 					} else if (mountType === 'shared-root') {
-						deleteTitle = t('files', 'Leave this share');
+						// XXX CDSP - Change text
+						deleteTitle = t('files_external', 'Delete File?');
 					}
 					return deleteTitle;
 				},
