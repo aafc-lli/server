@@ -39,12 +39,6 @@
 			</div>
 			<template v-if="avatarChangeSupported">
 				<div class="avatar__buttons">
-					<NcButton :aria-label="t('settings', 'Upload profile picture')"
-						@click="activateLocalFilePicker">
-						<template #icon>
-							<Upload :size="20" />
-						</template>
-					</NcButton>
 					<NcButton :aria-label="t('settings', 'Choose profile picture from Files')"
 						@click="openFilePicker">
 						<template #icon>
