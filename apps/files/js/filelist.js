@@ -3257,6 +3257,7 @@
 		 * directory
 		 */
 		do_delete:function(files, dir) {
+			// XXX CDSP Add delete confirmation
 			OC.dialogs.confirmDestructive(
 				t('files_external', 'Are you sure you want to delete the file(s)?'),
 				t('files_external', 'Delete File?'), {
