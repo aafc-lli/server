@@ -803,7 +803,7 @@
 						deleteTitle = t('files', 'Disconnect storage');
 					} else if (mountType === 'shared-root') {
 						// XXX CDSP - Change text
-						deleteTitle = t('files_external', 'Delete File?');
+						deleteTitle = t('files_external', 'Delete File');
 					}
 					return deleteTitle;
 				},
