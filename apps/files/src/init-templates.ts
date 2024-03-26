@@ -72,7 +72,8 @@ const TemplatePicker = new View({
 	},
 })
 TemplatePicker.$mount('#template-picker')
-if (!templatesPath) {
+// XXX CDSP - never render this folder in a weird way
+if (false) {
 	logger.debug('Templates folder not initialized')
 	addNewFileMenuEntry({
 		id: 'template-picker',
