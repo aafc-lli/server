@@ -482,7 +482,9 @@ export default {
 		 * @return {string}
 		 */
 		shareLink() {
-			return window.location.protocol + '//' + window.location.host + generateUrl('/s/') + this.share.token
+			// XXX CDSP -- hardcode link to force exernal shares.
+			// TODO: Chagge along with other link in this commit. 
+			return window.location.protocol + "//" + window.location.host.replace('lli', 'll-lv') + (0, l.generateUrl)("/s/") + this.share.token;
 		},
 
 		/**
