@@ -13,3 +13,6 @@
 [submodule "apps/announcementcenter"]
 	path = apps/announcementcenter
 	url = https://github.com/nextcloud/announcementcenter.git
+[submodule "themes/cdsp-theme"]
+	path = themes/cdsp-theme
+	url = https://github.com/aafc-lli/cdsp-theme

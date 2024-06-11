@@ -42,7 +42,7 @@
 !/apps/user_status
 !/apps/weather_status
 !/apps/workflowengine
-#### ...including CDSP apps: ####
+#### ...including CDSP apps ####
 # 1stparty.
 !/apps/cdsp
 !/apps/user_saml
@@ -65,6 +65,8 @@
 /themes/*
 !/themes/example
 !/themes/README
+#### ...including CDSP themes ####
+!/themes/cdsp-theme
 
 # just sane ignores
 .*.sw[po]
