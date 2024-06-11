@@ -7,3 +7,9 @@
 [submodule "apps/user_saml"]
 	path = apps/user_saml
 	url = https://gitlab.com/aafc/cdsp-saml.git
+[submodule "apps/activity"]
+	path = apps/activity
+	url = https://github.com/nextcloud/activity.git
+[submodule "apps/announcementcenter"]
+	path = apps/announcementcenter
+	url = https://github.com/nextcloud/announcementcenter.git

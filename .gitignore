@@ -42,9 +42,13 @@
 !/apps/user_status
 !/apps/weather_status
 !/apps/workflowengine
-# Including CDSP apps:
+#### ...including CDSP apps: ####
+# 1stparty.
 !/apps/cdsp
 !/apps/user_saml
+# thirdparty.
+!/apps/activity
+!/apps/announcementcenter
 
 /apps/files_external/3rdparty/irodsphp/PHPUnitTest
 /apps/files_external/3rdparty/irodsphp/web
