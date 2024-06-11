@@ -1,3 +1,9 @@
 [submodule "3rdparty"]
 	path = 3rdparty
 	url = https://github.com/nextcloud/3rdparty.git
+[submodule "apps/cdsp"]
+	path = apps/cdsp
+	url = https://gitlab.com/aafc/cdsp.git
+[submodule "apps/user_saml"]
+	path = apps/user_saml
+	url = https://gitlab.com/aafc/cdsp-saml.git
