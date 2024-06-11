@@ -49,6 +49,7 @@
 # thirdparty.
 !/apps/activity
 !/apps/announcementcenter
+!/apps/notifications
 
 /apps/files_external/3rdparty/irodsphp/PHPUnitTest
 /apps/files_external/3rdparty/irodsphp/web

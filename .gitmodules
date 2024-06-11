@@ -16,3 +16,6 @@
 [submodule "themes/cdsp-theme"]
 	path = themes/cdsp-theme
 	url = https://github.com/aafc-lli/cdsp-theme
+[submodule "apps/notifications"]
+	path = apps/notifications
+	url = https://github.com/nextcloud/notifications.git
