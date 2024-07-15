@@ -171,8 +171,8 @@ class NewUserMailHelper {
 	 */
 	public function sendMail(IUser $user,
 		IEMailTemplate $emailTemplate): void {
-		// XXX CDSP
-		// Short circuit to avoid new user email being sent.
+		
+		// !CDSP: Don't send mail to new users.
 		return;
 		
 		// Be sure to never try to send to an empty e-mail

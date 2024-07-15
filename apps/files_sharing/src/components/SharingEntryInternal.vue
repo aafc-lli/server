@@ -64,7 +64,7 @@ export default {
 		 * @return {string}
 		 */
 		internalLink() {
-			// XXX CDSP -- start
+			// !CDSP: Generate internal / external link pair instead. //
 			
 			// TODO: Using a hardcoded URL is not good. We should add the interal and external url to the defaults.php in theme,
 			// write it to the the page, and grab it with JS. We can determine whether we are internal or external using the 'Side'
@@ -89,6 +89,7 @@ export default {
 			} else {
 				return `Internal link/Lien interne:\n    ${otherLink}\n\nExternal link/Lien externe:\n    ${baseLink}`;
 			}
+			// !CDSP: End. //
 		},
 
 		/**

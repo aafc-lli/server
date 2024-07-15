@@ -47,7 +47,8 @@ import { initLivePhotos } from './services/LivePhotos'
 // Register file actions
 registerFileAction(deleteAction)
 registerFileAction(downloadAction)
-registerFileAction(editLocallyAction)
+// !CDSP: Remove edit locally action.
+//registerFileAction(editLocallyAction)
 registerFileAction(favoriteAction)
 registerFileAction(moveOrCopyAction)
 registerFileAction(openFolderAction)
@@ -58,8 +59,9 @@ registerFileAction(viewInFolderAction)
 
 // Register new menu entry
 addNewFileMenuEntry(newFolderEntry)
-addNewFileMenuEntry(newTemplatesFolder)
-registerTemplateEntries()
+// !CDSP: Never render templates folder options.
+//addNewFileMenuEntry(newTemplatesFolder)
+//registerTemplateEntries()
 
 // Register files views
 registerFavoritesView()

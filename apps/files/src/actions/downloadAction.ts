@@ -80,6 +80,20 @@ export const action = new FileAction({
 	},
 
 	async exec(node: Node, view: View, dir: string) {
+		var decision = await new Promise(function(resolve) {
+			window.OC.dialogs.confirmDestructive(
+				t('files_external', 'Proceed with download?'),
+				t('files_external', 'Download'),
+				{
+					type: window.OC.dialogs.YES_NO_BUTTONS,
+					confirm: t('files_external', 'Yes'),
+					cancel: t('files_external', 'No')
+				},
+				resolve
+			);
+		});
+		if (!decision) return true;
+
 		if (node.type === FileType.Folder) {
 			downloadNodes(dir, [node])
 			return null

@@ -144,6 +144,23 @@ export const action = new FileAction({
 	},
 
 	async exec(node: Node) {
+		// !CDSP: Wrap to confirm deletion. //
+		var decision = await new Promise(function(resolve) {
+			window.OC.dialogs.confirmDestructive(
+				t('files_external', 'Are you sure you want to delete the file(s)?'),
+				t('files_external', 'Delete File?'),
+				{
+					type: window.OC.dialogs.YES_NO_BUTTONS,
+					confirm: t('files_external', 'Delete'),
+					confirmClasses: 'error',
+					cancel: t('files_external', 'Cancel')
+				},
+				resolve
+			);
+		});
+		if (!decision) return true;
+		// !CDSP End wrap. //
+
 		try {
 			await axios.delete(node.encodedSource)
 

@@ -39,6 +39,7 @@
 			</div>
 			<template v-if="avatarChangeSupported">
 				<div class="avatar__buttons">
+					<!-- CDSP: Removed image upload option. -->
 					<NcButton :aria-label="t('settings', 'Choose profile picture from Files')"
 						@click="openFilePicker">
 						<template #icon>
@@ -53,7 +54,8 @@
 						</template>
 					</NcButton>
 				</div>
-				<span>{{ t('settings', 'png or jpg, max. 5 MB') }}</span>
+				<!-- !CDSP: Change message to specify max size. -->
+				<span>{{ t('settings', 'PNG or JPG, max. 5 MB') }}</span>
 				<input ref="input"
 					type="file"
 					:accept="validMimeTypes.join(',')"
