@@ -47,7 +47,7 @@
 			<FileEntryPreview ref="preview"
 				:source="source"
 				:dragover="dragover"
-				@click.native="execDefaultAction" />
+				@click.native="openDetailsIfAvailable" />
 
 			<FileEntryName ref="name"
 				:display-name="displayName"
@@ -55,7 +55,7 @@
 				:files-list-width="filesListWidth"
 				:nodes="nodes"
 				:source="source"
-				@click="execDefaultAction" />
+				@click.native="openDetailsIfAvailable" />
 		</td>
 
 		<!-- Actions -->
