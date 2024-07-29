@@ -140,7 +140,25 @@ class Hooks {
 			$template->setSubject($l->t('Password for %1$s changed on %2$s', [$user->getDisplayName(), $instanceName]));
 			$template->addHeader();
 			$template->addHeading($l->t('Password changed for %s', [$user->getDisplayName()]), false);
-			$template->addBodyText($text . ' ' . $l->t('If you did not request this, please contact an administrator.'));
+
+			// !CDSP: Custom email body //
+			$template->addBodyText($l->t("Le français suit"));
+
+			$template->addBodyText($l->t("This is an automated message. Please do not reply to this email address."));
+			$template->addBodyText($l->t("Dear %s", [$user->getDisplayName(), $instanceUrl]));
+			$template->addBodyText($l->t("Your user account on the Living Labs Cloud Data Storage Platform (LL-CDSP) has requested a password change."));
+			$template->addBodyText($l->t("You can log in to the LL-CDSP with your existing username and new password at https://lli.agr.gc.ca/ncloud/index.php/"));
+			$template->addBodyText($l->t("For any additional assistance, please email: aafc.livinglaboratories-laboratoiresvivants.aac@canada.ca "));
+
+			$template->addBodyText($l->t("_______________________________________________"));
+
+			$template->addBodyText($l->t("Il s'agit d'un message automatisé. Veuillez ne pas répondre à ce courriel.  "));
+			$template->addBodyText($l->t("Bonjour %s ", [$user->getDisplayName(), $instanceUrl]));
+			$template->addBodyText($l->t("Une demande de changement de mot de passe a été demandé pour votre compte d'utilisateur de la plateforme de stockage de données infonuagique des laboratoires vivants (PSDI-LV)."));
+			$template->addBodyText($l->t("Vous pouvez vous connecter à la PSDI-LV en utilisant votre nom d’utilisateur et nouveau mot de passe à l'adresse https://lli.agr.gc.ca/ncloud/index.php/ "));
+			$template->addBodyText($l->t("Pour toute aide supplémentaire, veuillez envoyer un courriel à : aafc.livinglaboratories-laboratoiresvivants.aac@canada.ca "));
+			// !CDSP: End custom email body //
+
 			$template->addFooter();
 
 
@@ -209,10 +227,37 @@ class Hooks {
 			$template->setSubject($l->t('Email address for %1$s changed on %2$s', [$user->getDisplayName(), $instanceUrl]));
 			$template->addHeader();
 			$template->addHeading($l->t('Email address changed for %s', [$user->getDisplayName()]), false);
-			$template->addBodyText($text . ' ' . $l->t('If you did not request this, please contact an administrator.'));
+
 			if ($user->getEMailAddress()) {
-				$template->addBodyText($l->t('The new email address is %s', [$user->getEMailAddress()]));
+				// !CDSP: Custom email body. //
+				$contactEmail = 'aafc.livinglaboratories-laboratoiresvivants.aac@canada.ca';
+
+				$template->addBodyText($l->t("Le français suit"));
+
+				$template->addBodyText($l->t("This is an automated message. Please do not reply to this email address."));
+				$template->addBodyText($l->t("Dear %s ", [$user->getDisplayName()]));
+				$template->addBodyText($l->t("Your user account on the Living Labs Cloud Data Storage Platform (LL-CDSP) has requested an email address change."));
+				$template->addBodyText($l->t("This message is to confirm that the contact email address for "));
+				$template->addBodyText($l->t('Username %s', [$user->getDisplayName()]), false);
+				$template->addBodyText($l->t('Has been changed to'));
+				$template->addBodyText($l->t('%s', [$user->getEMailAddress()]));
+				$template->addBodyText($l->t("You can log in to the LL-CDSP with your existing username and password at: %s", [$instanceUrl]));
+				$template->addBodyText($l->t("For any additional assistance, please email: %s", [$contactEmail]));
+
+				$template->addBodyText($l->t("_______________________________________________"));
+
+				$template->addBodyText($l->t("Il s'agit d'un message automatisé. Veuillez ne pas répondre à ce courriel.  "));
+				$template->addBodyText($l->t("Bonjour %s ", [$user->getDisplayName(), $instanceUrl]));
+				$template->addBodyText($l->t("Un changement d’adresse de courriel a été demandé pour votre compte d'utilisateur de la plateforme de stockage de données infonuagique des laboratoires vivants (PSDI-LV). "));
+				$template->addBodyText($l->t("Le présent message a pour but de confirmer que l'adresse électronique de contact de :"));
+				$template->addBodyText($l->t('Nom d’utilisateur  %s', [$user->getDisplayName()]), false);
+				$template->addBodyText($l->t("a été modifié pour "));
+				$template->addBodyText($l->t('%s', [$user->getEMailAddress()]));
+				$template->addBodyText($l->t("Vous pouvez vous connecter à la PSDI-LV en utilisant votre nom d’utilisateur et mot de passe à l'adresse %s", [$instanceUrl]));
+				$template->addBodyText($l->t("Pour toute aide supplémentaire, veuillez envoyer un courriel à : %s", [$contactEmail]));
+				// !CDSP: End custom email body. //
 			}
+
 			$template->addFooter();
 
 

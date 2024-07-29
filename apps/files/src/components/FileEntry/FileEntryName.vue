@@ -37,21 +37,17 @@
 			@keyup.esc="stopRenaming" />
 	</form>
 
-	<component :is="linkTo.is"
-		v-else
-		ref="basename"
+	<div v-else
 		:aria-hidden="isRenaming"
 		class="files-list__row-name-link"
-		data-cy-files-list-row-name-link
-		v-bind="linkTo.params"
-		@click="$emit('click', $event)">
+		data-cy-files-list-row-name-link>
 		<!-- File name -->
 		<span class="files-list__row-name-text">
 			<!-- Keep the displayName stuck to the extension to avoid whitespace rendering issues-->
 			<span class="files-list__row-name-" v-text="displayName" />
 			<span class="files-list__row-name-ext" v-text="extension" />
 		</span>
-	</component>
+	</div>
 </template>
 
 <script lang="ts">

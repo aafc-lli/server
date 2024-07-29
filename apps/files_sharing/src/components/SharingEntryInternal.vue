@@ -64,7 +64,32 @@ export default {
 		 * @return {string}
 		 */
 		internalLink() {
-			return window.location.protocol + '//' + window.location.host + generateUrl('/f/') + this.fileInfo.id
+			// !CDSP: Generate internal / external link pair instead. //
+			
+			// TODO: Using a hardcoded URL is not good. We should add the interal and external url to the defaults.php in theme,
+			// write it to the the page, and grab it with JS. We can determine whether we are internal or external using the 'Side'
+			// cookie that is set
+
+			// Generate the base link using fileInfo.id
+			const baseLink = window.location.protocol + '//' + window.location.host + generateUrl('/f/') + this.fileInfo.id;
+			let otherLink = '';
+			let internal = false;
+
+			// Determine if the current host is internal and generate the alternate link accordingly
+			if (window.location.host.includes('lli')) {
+				internal = true;
+				otherLink = window.location.protocol + '//' + window.location.host.replace('lli', 'll-lv') + generateUrl('/f/') + this.fileInfo.id;
+			} else {
+				otherLink = window.location.protocol + '//' + window.location.host.replace('ll-lv', 'lli') + generateUrl('/f/') + this.fileInfo.id;
+			}
+
+			// Format and return the links based on whether the current host is internal
+			if (internal) {
+				return `Internal link/Lien interne:\n    ${baseLink}\n\nExternal link/Lien externe:\n    ${otherLink}`;
+			} else {
+				return `Internal link/Lien interne:\n    ${otherLink}\n\nExternal link/Lien externe:\n    ${baseLink}`;
+			}
+			// !CDSP: End. //
 		},
 
 		/**

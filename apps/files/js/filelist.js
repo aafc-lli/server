@@ -9,6 +9,19 @@
  */
 
 (function() {
+	// !CDSP: Helper to add confirmation dialogues.
+	function CDSP_confirmAction(modalParam1, modalParam2, modalParam3, fn) {
+		OC.dialogs.confirmDestructive(
+			modalParam1,
+			modalParam2,
+			modalParam3,
+			function(decision) {
+				if (!decision) return;
+
+				fn();
+			}
+		);
+	}
 
 	/**
 	 * @class OCA.Files.FileList
@@ -550,10 +563,23 @@
 				}
 				switch (action) {
 					case 'delete':
-						this._onClickDeleteSelected(ev)
+						this._onClickDeleteSelected(ev)				
 						break;
 					case 'download':
-						this._onClickDownloadSelected(ev);
+						// !CDSP: Wrap download in confirmation.
+						var self = this;
+						CDSP_confirmAction(
+							t('files_external', 'Proceed with download?'),
+							t('files_external', 'Download'),
+							{
+								type: OC.dialogs.YES_NO_BUTTONS,
+								confirm: t('files_external', 'Yes'),
+								cancel: t('files_external', 'No')
+							},
+							function() {
+								self._onClickDownloadSelected(ev);
+							}
+						);
 						break;
 					case 'copyMove':
 						this._onClickCopyMoveSelected(ev);
@@ -3242,7 +3268,20 @@
 		 * directory
 		 */
 		do_delete:function(files, dir) {
+			// !CDSP: Wrap file deletion in confirm dialogue. //
 			var self = this;
+			CDSP_confirmAction(
+				t('files_external', 'Are you sure you want to delete the file(s)?'),
+				t('files_external', 'Delete File?'),
+				{
+					type: OC.dialogs.YES_NO_BUTTONS,
+					confirm: t('files_external', 'Delete'),
+					confirmClasses: 'error',
+					cancel: t('files_external', 'Cancel')
+				},
+				function() {
+			// !CDSP: End wrapper start. //
+
 			if (files && files.substr) {
 				files=[files];
 			}
@@ -3286,6 +3325,9 @@
 			return this.reportOperationProgress(files, removeFunction).then(function(){
 					self.updateStorageStatistics();
 					self.updateStorageQuotas();
+				});
+
+			// !CDSP: End wrap.
 				});
 		},
 

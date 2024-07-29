@@ -82,7 +82,11 @@ export default {
 
 	data() {
 		return {
-			canLinkShare: getCapabilities().files_sharing.public.enabled,
+			canLinkShare: (
+				getCapabilities().files_sharing.public.enabled &&
+				/** !CDSP: Only admins can see share links. */
+				window.cdspStateData.isUserInAdmin
+			),
 		}
 	},
 

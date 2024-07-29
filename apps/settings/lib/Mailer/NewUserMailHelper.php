@@ -171,7 +171,10 @@ class NewUserMailHelper {
 	 */
 	public function sendMail(IUser $user,
 		IEMailTemplate $emailTemplate): void {
-
+		
+		// !CDSP: Don't send mail to new users.
+		return;
+		
 		// Be sure to never try to send to an empty e-mail
 		$email = $user->getEMailAddress();
 		if ($email === null) {

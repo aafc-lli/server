@@ -482,7 +482,9 @@ export default {
 		 * @return {string}
 		 */
 		shareLink() {
-			return window.location.protocol + '//' + window.location.host + generateUrl('/s/') + this.share.token
+			// !CDSP: Hardcode link to force exernal shares.
+			// TODO: Improve.
+			return window.location.protocol + "//" + window.location.host.replace('lli', 'll-lv') + '/s/' + this.share.token;
 		},
 
 		/**

@@ -85,7 +85,8 @@ class GroupProvider implements IProvider {
 			case self::ADDED_TO_GROUP:
 				if (isset($parsedParameters['actor'])) {
 					if ($this->activityManager->getCurrentUserId() === $params['user']) {
-						$subject = $l->t('{actor} added you to group {group}');
+						// !CDSP: Modify email subject.
+						$subject = $l->t('Your user account on the Living Labs Cloud Data Storage Platform (LL-CDSP) has been added to the following group: {group}');
 					} elseif (isset($params['actor']) && $this->activityManager->getCurrentUserId() === $params['actor']) {
 						$subject = $l->t('You added {user} to group {group}');
 					} else {
@@ -100,7 +101,8 @@ class GroupProvider implements IProvider {
 			case self::REMOVED_FROM_GROUP:
 				if (isset($parsedParameters['actor'])) {
 					if ($this->activityManager->getCurrentUserId() === $params['user']) {
-						$subject = $l->t('{actor} removed you from group {group}');
+						// !CDSP: Modify email subject.
+						$subject = $l->t('Your user account on the Living Labs Cloud Data Storage Platform (LL-CDSP) has been removed from the following group: {group}');
 					} elseif (isset($params['actor']) && $this->activityManager->getCurrentUserId() === $params['actor']) {
 						$subject = $l->t('You removed {user} from group {group}');
 					} else {

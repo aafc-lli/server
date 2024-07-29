@@ -34,6 +34,8 @@ import { getCurrentUser } from '@nextcloud/auth'
 
 import './sharingStatusAction.scss'
 
+console.warn(getCurrentUser());
+
 const generateAvatarSvg = (userId: string) => {
 	const avatarUrl = generateUrl('/avatar/{userId}/32', { userId })
 	return `<svg width="32" height="32" viewBox="0 0 32 32"

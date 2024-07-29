@@ -42,6 +42,15 @@
 !/apps/user_status
 !/apps/weather_status
 !/apps/workflowengine
+#### ...including CDSP apps ####
+# 1stparty.
+!/apps/cdsp
+!/apps/user_saml
+# thirdparty.
+!/apps/activity
+!/apps/announcementcenter
+!/apps/notifications
+
 /apps/files_external/3rdparty/irodsphp/PHPUnitTest
 /apps/files_external/3rdparty/irodsphp/web
 /apps/files_external/3rdparty/irodsphp/prods/test
@@ -57,6 +66,8 @@
 /themes/*
 !/themes/example
 !/themes/README
+#### ...including CDSP themes ####
+!/themes/cdsp-theme
 
 # just sane ignores
 .*.sw[po]

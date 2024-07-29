@@ -9,6 +9,19 @@
  */
 
 (function() {
+	// !CDSP: Helper to add confirmation dialogues.
+	function CDSP_confirmAction(modalParam1, modalParam2, modalParam3, fn) {
+		OC.dialogs.confirmDestructive(
+			modalParam1,
+			modalParam2,
+			modalParam3,
+			function(decision) {
+				if (!decision) return;
+
+				fn();
+			}
+		);
+	}
 
 	/**
 	 * Construct a new FileActions instance
@@ -633,7 +646,19 @@
 				mime: 'all',
 				permissions: OC.PERMISSION_READ,
 				iconClass: 'icon-download',
-				actionHandler: function (filename, context) {
+				actionHandler: function(filename, context) {
+					// !CDSP: Wrap in confirm. //
+					CDSP_confirmAction(
+						t('files_external', 'Proceed with download?'),
+						t('files_external', 'Download'),
+						{
+							type: OC.dialogs.YES_NO_BUTTONS,
+							confirm: t('files_external', 'Yes'),
+							cancel: t('files_external', 'No')
+						},
+						function() {
+					// !CDSP: End wrap start. //
+
 					var dir = context.dir || context.fileList.getCurrentDirectory();
 					var isDir = context.$file.attr('data-type') === 'dir';
 					var url = context.fileList.getDownloadUrl(filename, dir, isDir);
@@ -653,6 +678,9 @@
 						context.fileList.showFileBusyState(filename, true);
 						OCA.Files.Files.handleDownload(url, disableLoadingState);
 					}
+					
+					// !CDSP: End wrap.
+						});
 				}
 			});
 
@@ -787,7 +815,8 @@
 					if (mountType === 'external-root') {
 						deleteTitle = t('files', 'Disconnect storage');
 					} else if (mountType === 'shared-root') {
-						deleteTitle = t('files', 'Leave this share');
+						// !CDSP: Change text.
+						deleteTitle = t('files_external', 'Delete File');
 					}
 					return deleteTitle;
 				},

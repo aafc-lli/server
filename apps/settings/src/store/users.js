@@ -57,7 +57,8 @@ const state = {
 	orderBy: GroupSorting.UserCount,
 	minPasswordLength: 0,
 	usersOffset: 0,
-	usersLimit: 25,
+	// !CDSP: Raise limit.
+	usersLimit: 1000,
 	disabledUsersOffset: 0,
 	disabledUsersLimit: 25,
 	userCount: 0,
@@ -75,6 +76,22 @@ const mutations = {
 		const existingUsers = state.users.map(({ id }) => id)
 		const newUsers = Object.values(usersObj)
 			.filter(({ id }) => !existingUsers.includes(id))
+			// !CDSP: Post-sort users by last name, first name. //
+			.sort((a, b) => {
+				// Fallback to empty string if lastName or firstName is not provided
+				const aLastName = a.lastName || "";
+				const aFirstName = a.firstName || "";
+				const bLastName = b.lastName || "";
+				const bFirstName = b.firstName || "";
+		
+				// First, compare by last name, using the fallback if necessary
+				const lastNameComparison = aLastName.localeCompare(bLastName);
+				if (lastNameComparison !== 0) return lastNameComparison;
+		
+				// If last names are equal or missing, compare by first name
+				return aFirstName.localeCompare(bFirstName);
+			});
+			// !CDSP: End user sort. //
 
 		const users = state.users.concat(newUsers)
 		state.usersOffset += state.usersLimit
