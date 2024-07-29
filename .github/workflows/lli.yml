@@ -10,11 +10,28 @@ on:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Login
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+  
     - name: Build
-      run: cd .lli && ./build.sh foo
+      run:
+        cd .lli && \
+        ./build.sh ncloud
+
+    - name: Push
+      run:
+        branch_name=$(echo "${GITHUB_REF#refs/heads/}")
+        tag=ghcr.io/aafc-lli/ncloud:$branch_name
+        docker tag ncloud $tag
+        docker push $tag
