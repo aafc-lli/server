@@ -28,7 +28,7 @@ jobs:
       run: cd .lli && ./build.sh ncloud
 
     - name: Push
-      run:
+      run: |
         branch_name=$(echo "${GITHUB_REF#refs/heads/}")
         tag=ghcr.io/aafc-lli/ncloud:$branch_name
         docker tag ncloud $tag
