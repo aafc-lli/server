@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - feat/ncloud-modernization # TODO: rm.
-      - main
+      - master
       - test
       - dev
 
@@ -25,9 +25,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
   
     - name: Build
-      run:
-        cd .lli && \
-        ./build.sh ncloud
+      run: cd .lli && ./build.sh ncloud
 
     - name: Push
       run:
