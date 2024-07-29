@@ -1,0 +1,20 @@
+name: LLI Build Pipeline
+
+on:
+  push:
+    branches:
+      - feat/ncloud-modernization # TODO: rm.
+      - main
+      - test
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Run a one-line script
+      run: echo "Hello World"
