@@ -97,8 +97,11 @@ RUN echo \
     $PHP_VER-redis \
     | xargs apt-get install -y
 
-# Install sudo for running commands as www-data.
-RUN apt-get install -y sudo
+# Install:
+# - sudo for running commands as www-data.
+# - postgresql-client for configuration loading.
+# - curl for self-init requests.
+RUN apt-get install -y sudo postgresql-client curl
 
 # Set up Nginx.
 RUN apt-get install -y nginx
@@ -108,14 +111,17 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
 # Populate service directory.
 COPY --from=build_run /ncloud /ncloud
 
+# Chown app.
+RUN chown -R www-data:www-data /ncloud/server
+
 # Load configs and boot script.
 COPY container/fpm.conf /etc/php/$PHP_VER_NUM/fpm/php-fpm.conf
 COPY container/fpm-pool.conf /etc/php/$PHP_VER_NUM/fpm/pool.d/www.conf
-COPY container/nginx.conf nginx.conf.template
+COPY container/nginx.template.conf nginx.template.conf
 COPY container/boot.sh boot.sh
-COPY container/post-install.sh post-install.sh
-COPY container/local-update.sh local-update.sh
 
-RUN chown -R www-data:www-data /ncloud/server
+# Init supplimentary log.
+RUN touch /ncloud/ncloud.log && \
+    chown www-data:www-data /ncloud/ncloud.log
 
 CMD ./boot.sh
