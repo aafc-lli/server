@@ -18,4 +18,4 @@
 	url = https://github.com/nextcloud/notifications.git
 [submodule "apps/user_saml"]
 	path = apps/user_saml
-	url = https://github.com/nextcloud/user_saml
+	url = https://github.com/aafc-lli/cdsp-saml
