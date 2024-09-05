@@ -3,7 +3,6 @@ name: LLI Build Pipeline
 on:
   push:
     branches:
-      - feat/ncloud-modernization # TODO: rm.
       - master
       - test
       - dev
