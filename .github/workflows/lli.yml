@@ -3,9 +3,9 @@ name: LLI Build Pipeline
 on:
   push:
     branches:
-      - master
-      - test
-      - dev
+      - prod
+      - uat
+      - qa
 
 jobs:
   build:
