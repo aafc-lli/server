@@ -3,7 +3,7 @@
 	url = https://github.com/nextcloud/3rdparty.git
 [submodule "apps/cdsp"]
 	path = apps/cdsp
-	url = https://gitlab.com/aafc/cdsp.git
+	url = https://github.com/aafc-lli/cdsp.git
 [submodule "apps/activity"]
 	path = apps/activity
 	url = https://github.com/nextcloud/activity.git
