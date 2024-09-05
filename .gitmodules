@@ -4,9 +4,6 @@
 [submodule "apps/cdsp"]
 	path = apps/cdsp
 	url = https://gitlab.com/aafc/cdsp.git
-[submodule "apps/user_saml"]
-	path = apps/user_saml
-	url = https://gitlab.com/aafc/cdsp-saml.git
 [submodule "apps/activity"]
 	path = apps/activity
 	url = https://github.com/nextcloud/activity.git
@@ -19,3 +16,6 @@
 [submodule "apps/notifications"]
 	path = apps/notifications
 	url = https://github.com/nextcloud/notifications.git
+[submodule "apps/user_saml"]
+	path = apps/user_saml
+	url = https://github.com/aafc-lli/cdsp-saml
