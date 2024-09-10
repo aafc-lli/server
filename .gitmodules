@@ -12,10 +12,10 @@
 	url = https://github.com/nextcloud/announcementcenter.git
 [submodule "themes/cdsp-theme"]
 	path = themes/cdsp-theme
-	url = https://github.com/aafc-lli/cdsp-theme
+	url = https://github.com/aafc-lli/cdsp-theme.git
 [submodule "apps/notifications"]
 	path = apps/notifications
 	url = https://github.com/nextcloud/notifications.git
 [submodule "apps/user_saml"]
 	path = apps/user_saml
-	url = https://github.com/aafc-lli/cdsp-saml
+	url = https://github.com/aafc-lli/cdsp-saml.git
