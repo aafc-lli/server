@@ -5,7 +5,7 @@ on:
     branches:
       - prod
       - uat
-      - qa
+      - dev
 
 jobs:
   build:
