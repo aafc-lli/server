@@ -6,7 +6,7 @@ set -e
 image_tag=$1
 flags=$2
 
-if [[ $flags != *"reuse-ctx"* ]]; then
+if [[ $flags != *"skip-ctx"* ]]; then
     echo "Populating build context..."
 
     if [[ -d context ]]; then

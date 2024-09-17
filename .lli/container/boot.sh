@@ -18,18 +18,34 @@ enable_apps=(
     "activity"
     "announcementcenter"
     "notifications"
-    "user_saml"
+    "group_everyone"
     # First-party.
     "cdsp"
+    "user_saml"
 )
+
+data_directory=/ncloud/data
+ncloud_version="29.0.2.2"
 # ----
+
+exec_occ() {
+    sudo -u www-data php occ "$@"
+}
+
+conf_occ_sys() {
+    exec_occ config:system:set $1 --value="$2"
+}
+
+conf_occ_app() {
+    exec_occ config:app:set $1 $2 --value="$3"
+}
 
 protocol=http
 service_url=http://localhost
 postgres_conn_str=postgresql://$POSTGRES_USER:$POSTGRES_PW@$POSTGRES_HOST/$POSTGRES_DB
 if [[ $LLI_ENV != "local" ]]; then
     protocol=https
-    service_url=https://$NCLOUD_HOST
+    service_url=https://$NCLOUD_INTERNAL_HOST
 fi
 
 echo "Chowning data mount..."
@@ -37,7 +53,8 @@ chown -R www-data:www-data /ncloud/data
 
 echo "Configuring Nginx..."
 cat nginx.template.conf | \
-sed -E s/__NCLOUD_HOST/$NCLOUD_HOST/ | \
+sed -E s/__NCLOUD_INTERNAL_HOST/$NCLOUD_INTERNAL_HOST/ | \
+sed -E s/__NCLOUD_EXTERNAL_HOST/$NCLOUD_EXTERNAL_HOST/ | \
 sed -E s/__LISTEN_PORT/$NGINX_PORT/ \
 > /etc/nginx/nginx.conf
 
@@ -55,75 +72,123 @@ while ! psql $postgres_conn_str -c '\q' > /dev/null 2>&1; do
 done
 echo
 
-echo "Triggering install..."
-curl \
-    -sS \
-    -X POST \
-    -H "Content-Type: multipart/form-data" \
-    -F install=true \
-    -F adminlogin=$ADMIN_USER \
-    -F adminpass=$ADMIN_PW \
-    -F directory=/ncloud/data \
-    -F dbtype=pgsql \
-    -F dbuser=$POSTGRES_USER \
-    -F dbpass=$POSTGRES_PW \
-    -F dbpass-clone=$POSTGRES_PW \
-    -F dbname=$POSTGRES_DB \
-    -F dbhost=$POSTGRES_HOST \
-    $service_url
+# TODO: I don't think there's a way to remove this duplication, but worth
+# investigating...
+echo "Checking install state..."
+existing_users_check=$(cat << EOF | psql --tuples-only --no-align $postgres_conn_str
+SELECT uid FROM oc_users LIMIT 1;
+EOF
+)
 
-echo "Configuring enabled apps..."
+if [[ $NCLOUD_INSTALL == "1" && $existing_users_check == "" ]]; then
+    echo "Triggering install..."
+    curl \
+        -sS \
+        -X POST \
+        -H "Content-Type: multipart/form-data" \
+        -F install=true \
+        -F adminlogin=$NCLOUD_INSTALL_ADMIN_USER \
+        -F adminpass=$NCLOUD_INSTALL_ADMIN_PW \
+        -F directory=$data_directory \
+        -F dbtype=pgsql \
+        -F dbuser=$POSTGRES_USER \
+        -F dbpass=$POSTGRES_PW \
+        -F dbpass-clone=$POSTGRES_PW \
+        -F dbname=$POSTGRES_DB \
+        -F dbhost=$POSTGRES_HOST \
+        $service_url
+else
+    echo "Marking existing install..."
+    cat << EOF > server/config/config.php
+<?php
+\$CONFIG = [
+'version' => '$ncloud_version',
+'installed' => true,
+'updater.release.channel' => 'git',
+'datadirectory' => '$data_directory',
+'dbtype' => 'pgsql',
+'dbuser' => '$POSTGRES_USER',
+'dbpassword' => '$POSTGRES_PW',
+'dbhost' => '$POSTGRES_HOST',
+'dbname' => '$POSTGRES_DB',
+];
+EOF
+chown www-data:www-data server/config/config.php
+fi
+
 cd server
 
-exec_occ() {
-    sudo -u www-data php occ "$@"
-}
+echo "Configuring system..."
+# ---- System configuration.
+# Can't use helper function for these directly below because sub-arrays.
+exec_occ config:system:set redis host --value="$REDIS_HOST"
+exec_occ config:system:set redis port --value="$REDIS_PORT"
+exec_occ config:system:set trusted_domains 0 --value="localhost"
+exec_occ config:system:set trusted_domains 1 --value="$NCLOUD_INTERNAL_HOST"
+exec_occ config:system:set trusted_domains 2 --value="$NCLOUD_EXTERNAL_HOST"
+
+conf_occ_sys debug                 $NCLOUD_DEBUG
+conf_occ_sys instanceid            $NCLOUD_INSTANCE_ID
+conf_occ_sys secret                $NCLOUD_SECRET
+conf_occ_sys passwordsalt          $NCLOUD_SALT
+
+conf_occ_sys log_type              file
+conf_occ_sys logfile               /ncloud/ncloud.log
+conf_occ_sys loglevel              "0" # TODO: Inject config.
+
+conf_occ_sys datadirectory         $data_directory
+
+conf_occ_sys dbtype                pgsql
+conf_occ_sys dbhost                $POSTGRES_HOST
+conf_occ_sys dbname                $POSTGRES_DB
+conf_occ_sys dbuser                $POSTGRES_USER
+conf_occ_sys dbpassword            $POSTGRES_PW
+conf_occ_sys dbtableprefix         oc_
+
+conf_occ_sys memcache.local        "\OC\Memcache\Redis"
+conf_occ_sys memcache.distributed  "\OC\Memcache\Redis"
+conf_occ_sys memcache.locking      "\OC\Memcache\Redis"
+
+conf_occ_sys overwriteprotocol     $protocol
+conf_occ_sys overwritewebroot      $NCLOUD_PATH_PREFIX
+conf_occ_sys overwritehost         $NCLOUD_HOST
+conf_occ_sys overwrite.cli.url     $service_url
+
+conf_occ_sys installed             "true"
+
+echo "Configuring enabled apps..."
+conf_occ_sys theme                 cdsp-theme
 
 printf "%s\n" "${disable_apps[@]}" | xargs -I {} sudo -u www-data php occ app:disable {}
 printf "%s\n" "${enable_apps[@]}" | xargs -I {} sudo -u www-data php occ app:enable --force {}
+# ----
 
-echo "Applying configuration..."
-if [[ $NCLOUD_DEBUG == "1" ]]; then
-    exec_occ config:system:set debug --value="true"
-fi
+# ---- App configuration.
+echo "Configuring apps..."
+conf_occ_app user_saml general-allow_multiple_user_back_ends    "1"
+conf_occ_app user_saml type                                     "saml"
 
-exec_occ config:system:set log_type --value="file"
-exec_occ config:system:set logfile --value="/ncloud/ncloud.log"
-exec_occ config:system:set loglevel --value="0" # TODO: Inject config.
+conf_occ_app cdsp restrictedgroups     $CDSP_RESTRICTED_GROUPS
+conf_occ_app cdsp unassignedgroups     $CDSP_UNASSIGNED_GROUPS
+conf_occ_app cdsp admingroups          $CDSP_ADMIN_GROUPS
 
-exec_occ config:system:set redis host --value="$REDIS_HOST"
-exec_occ config:system:set redis port --value="$REDIS_PORT"
+conf_occ_app cdsp awsforceurl          $AWS_FORCE_URL
+conf_occ_app cdsp awsaccesskey         $AWS_ACCESS_KEY_ID
+conf_occ_app cdsp awssecretkey         $AWS_SECRET_ACCESS_KEY
+conf_occ_app cdsp awsbucket            $AWS_BUCKET
+conf_occ_app cdsp awsregion            ca-central-1
 
-exec_occ config:system:set memcache.local --value="\OC\Memcache\Redis"
-exec_occ config:system:set memcache.distributed --value="\OC\Memcache\Redis"
-exec_occ config:system:set memcache.locking --value="\OC\Memcache\Redis"
-
-exec_occ config:system:set trusted_domains 1 --value="$NCLOUD_HOST"
-exec_occ config:system:set overwriteprotocol --value="$protocol"
-exec_occ config:system:set overwritewebroot --value="$NCLOUD_PATH_PREFIX"
-exec_occ config:system:set overwritehost --value="$NCLOUD_HOST"
-exec_occ config:system:set overwrite.cli.url --value="$service_url"
-exec_occ config:system:set theme --value="cdsp-theme"
-
-exec_occ config:app:set user_saml general-allow_multiple_user_back_ends --value="1" # todo rm this
-exec_occ config:app:set user_saml type --value "saml"
-
-saml_conf_json="$(echo "$SAML_CONF_B64" | base64 -d)"
+saml_internal_conf_json="$(echo "$SAML_INTERNAL_CONF_B64" | base64 -d)"
+saml_external_conf_json="$(echo "$SAML_EXTERNAL_CONF_B64" | base64 -d)"
 cat <<EOF___ | psql $postgres_conn_str
 DELETE FROM oc_user_saml_configurations;
 
 INSERT INTO oc_user_saml_configurations (id, name, configuration)
-VALUES (1, 'Primary IdP', '$saml_conf_json');
+VALUES
+(1, 'Dummy IdP - Internal', '$saml_internal_conf_json'),
+(2, 'Dummy IdP - External', '$saml_external_conf_json');
 EOF___
-
-exec_occ config:app:set cdsp restrictedgroups --value="$CDSP_RESTRICTED_GROUPS"
-exec_occ config:app:set cdsp unassignedgroups --value="$CDSP_UNASSIGNED_GROUPS"
-exec_occ config:app:set cdsp admingroups --value="$CDSP_ADMIN_GROUPS"
-
-exec_occ config:app:set cdsp awsaccesskey --value="$AWS_ACCESS_KEY_ID"
-exec_occ config:app:set cdsp awssecretkey --value="$AWS_SECRET_ACCESS_KEY"
-exec_occ config:app:set cdsp awsbucket --value="$AWS_BUCKET"
-exec_occ config:app:set cdsp awsregion --value="ca-central-1"
+# ----
 
 echo "Up."
 tail -f /ncloud/ncloud.log
