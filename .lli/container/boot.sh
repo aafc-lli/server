@@ -105,6 +105,13 @@ exec_occ config:system:set overwritehost --value="$NCLOUD_HOST"
 exec_occ config:system:set overwrite.cli.url --value="$service_url"
 exec_occ config:system:set theme --value="cdsp-theme"
 
+exec_occ config:system:set mail_from_address --value="$MAIL_FROM_ADDRESS"
+exec_occ config:system:set mail_smtpmode --value="smtp"
+exec_occ config:system:set mail_sendmailmode --value="smtp"
+exec_occ config:system:set mail_domain --value="$MAIL_DOMAIN"
+exec_occ config:system:set mail_smtphost --value="$MAIL_SMTPHOST"
+exec_occ config:system:set mail_smtpport --value="$MAIL_SMTPPORT"
+
 exec_occ config:app:set user_saml general-allow_multiple_user_back_ends --value="1" # todo rm this
 exec_occ config:app:set user_saml type --value "saml"
 
