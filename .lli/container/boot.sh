@@ -40,11 +40,9 @@ conf_occ_app() {
     exec_occ config:app:set $1 $2 --value="$3"
 }
 
-protocol=http
 service_url=http://localhost
 postgres_conn_str=postgresql://$POSTGRES_USER:$POSTGRES_PW@$POSTGRES_HOST/$POSTGRES_DB
 if [[ $LLI_ENV != "local" ]]; then
-    protocol=https
     service_url=https://$NCLOUD_INTERNAL_HOST
 fi
 
@@ -149,7 +147,7 @@ conf_occ_sys memcache.local        "\OC\Memcache\Redis"
 conf_occ_sys memcache.distributed  "\OC\Memcache\Redis"
 conf_occ_sys memcache.locking      "\OC\Memcache\Redis"
 
-conf_occ_sys overwriteprotocol     $protocol
+conf_occ_sys overwriteprotocol     https
 conf_occ_sys overwritewebroot      $NCLOUD_PATH_PREFIX
 conf_occ_sys overwritehost         $NCLOUD_HOST
 conf_occ_sys overwrite.cli.url     $service_url
@@ -180,14 +178,14 @@ conf_occ_app cdsp awsregion            ca-central-1
 
 saml_internal_conf_json="$(echo "$SAML_INTERNAL_CONF_B64" | base64 -d)"
 saml_external_conf_json="$(echo "$SAML_EXTERNAL_CONF_B64" | base64 -d)"
-cat <<EOF___ | psql $postgres_conn_str
+cat <<EOF | psql $postgres_conn_str
 DELETE FROM oc_user_saml_configurations;
 
 INSERT INTO oc_user_saml_configurations (id, name, configuration)
 VALUES
-(1, 'Dummy IdP - Internal', '$saml_internal_conf_json'),
-(2, 'Dummy IdP - External', '$saml_external_conf_json');
-EOF___
+(1, 'Internal IdP', '$saml_internal_conf_json'),
+(2, 'External IdP', '$saml_external_conf_json');
+EOF
 # ----
 
 echo "Up."
