@@ -16,6 +16,7 @@ enable_apps=(
     "files_external"
     # Third-party.
     "activity"
+    "auto_groups"
     "announcementcenter"
     "notifications"
     "group_everyone"
