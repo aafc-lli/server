@@ -309,7 +309,10 @@ class Manager extends PublicEmitter implements IUserManager {
 		}
 
 		uasort($users, function (IUser $a, IUser $b) {
-			return strcasecmp($a->getUID(), $b->getUID());
+			// !CDSP: Sort user lists by last name, case insensitive, rather than UID.
+			$aParts = explode($a->getDisplayName(), ' ');
+			$bParts = explode($b->getDisplayName(), ' ');
+			return strcasecmp($aParts[count($aParts) - 1], $bParts[count($bParts) - 1]);
 		});
 		return $users;
 	}

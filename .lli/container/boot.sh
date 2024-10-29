@@ -8,10 +8,10 @@ disable_apps=(
     "dashboard"
     "user_status"
     "files_reminders"
-    "comments"
 )
 enable_apps=(
     # Default.
+    "comments"
     "admin_audit"
     "files_external"
     # Third-party.
@@ -151,6 +151,8 @@ conf_occ_sys overwriteprotocol     https
 conf_occ_sys overwritewebroot      $NCLOUD_PATH_PREFIX
 conf_occ_sys overwritehost         $NCLOUD_HOST
 conf_occ_sys overwrite.cli.url     $service_url
+
+conf_occ_sys projects.enabled      "true"
 
 conf_occ_sys installed             "true"
 
