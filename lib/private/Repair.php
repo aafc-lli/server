@@ -79,8 +79,10 @@ use OC\Repair\Owncloud\UpdateLanguageCodes;
 use OC\Repair\RemoveLinkShares;
 use OC\Repair\RepairDavShares;
 use OC\Repair\RepairInvalidShares;
+use OC\Repair\RepairLogoDimension;
 use OC\Repair\RepairMimeTypes;
 use OC\Template\JSCombiner;
+use OCA\DAV\Migration\DeleteSchedulingObjects;
 use OCP\AppFramework\QueryException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Collaboration\Resources\IManager;
@@ -172,7 +174,6 @@ class Repair implements IOutput {
 	public static function getRepairSteps(): array {
 		return [
 			new Collation(\OC::$server->getConfig(), \OC::$server->get(LoggerInterface::class), \OC::$server->getDatabaseConnection(), false),
-			new RepairMimeTypes(\OC::$server->getConfig(), \OC::$server->getDatabaseConnection()),
 			new CleanTags(\OC::$server->getDatabaseConnection(), \OC::$server->getUserManager()),
 			new RepairInvalidShares(\OC::$server->getConfig(), \OC::$server->getDatabaseConnection()),
 			new MoveUpdaterStepFile(\OC::$server->getConfig()),
@@ -211,6 +212,7 @@ class Repair implements IOutput {
 			\OCP\Server::get(AddRemoveOldTasksBackgroundJob::class),
 			\OCP\Server::get(AddMetadataGenerationJob::class),
 			\OCP\Server::get(AddAppConfigLazyMigration::class),
+			\OCP\Server::get(RepairLogoDimension::class),
 		];
 	}
 
@@ -223,7 +225,9 @@ class Repair implements IOutput {
 	public static function getExpensiveRepairSteps() {
 		return [
 			new OldGroupMembershipShares(\OC::$server->getDatabaseConnection(), \OC::$server->getGroupManager()),
+			new RepairMimeTypes(\OC::$server->getConfig(), \OC::$server->getDatabaseConnection()),
 			\OC::$server->get(ValidatePhoneNumber::class),
+			\OC::$server->get(DeleteSchedulingObjects::class),
 		];
 	}
 

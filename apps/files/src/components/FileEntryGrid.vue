@@ -49,16 +49,18 @@
 				:dragover="dragover"
 				:grid-mode="true"
 				:source="source"
+				@auxclick.native="execDefaultAction"
 				@click.native="execDefaultAction" />
 
 			<FileEntryName ref="name"
-				:display-name="displayName"
+				:basename="basename"
 				:extension="extension"
 				:files-list-width="filesListWidth"
 				:grid-mode="true"
 				:nodes="nodes"
 				:source="source"
-				@click="execDefaultAction" />
+				@auxclick.native="execDefaultAction"
+				@click.native="execDefaultAction" />
 		</td>
 
 		<!-- Actions -->
@@ -75,6 +77,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 
+import { useNavigation } from '../composables/useNavigation'
 import { useActionsMenuStore } from '../store/actionsmenu.ts'
 import { useDragAndDropStore } from '../store/dragging.ts'
 import { useFilesStore } from '../store/files.ts'
@@ -108,12 +111,16 @@ export default defineComponent({
 		const filesStore = useFilesStore()
 		const renamingStore = useRenamingStore()
 		const selectionStore = useSelectionStore()
+		const { currentView } = useNavigation()
+
 		return {
 			actionsMenuStore,
 			draggingStore,
 			filesStore,
 			renamingStore,
 			selectionStore,
+
+			currentView,
 		}
 	},
 

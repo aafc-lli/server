@@ -52,6 +52,7 @@
 
 <script lang="ts">
 import type { Node } from '@nextcloud/files'
+import type { FileSource } from '../types.ts'
 
 import { basename } from 'path'
 import { defineComponent } from 'vue'
@@ -62,6 +63,7 @@ import NcBreadcrumb from '@nextcloud/vue/dist/Components/NcBreadcrumb.js'
 import NcBreadcrumbs from '@nextcloud/vue/dist/Components/NcBreadcrumbs.js'
 import NcIconSvgWrapper from '@nextcloud/vue/dist/Components/NcIconSvgWrapper.js'
 
+import { useNavigation } from '../composables/useNavigation'
 import { onDropInternalFiles, dataTransferToFileTree, onDropExternalFiles } from '../services/DropService'
 import { showError } from '@nextcloud/dialogs'
 import { useDragAndDropStore } from '../store/dragging.ts'
@@ -98,6 +100,7 @@ export default defineComponent({
 		const pathsStore = usePathsStore()
 		const selectionStore = useSelectionStore()
 		const uploaderStore = useUploaderStore()
+		const { currentView } = useNavigation()
 
 		return {
 			draggingStore,
@@ -105,14 +108,12 @@ export default defineComponent({
 			pathsStore,
 			selectionStore,
 			uploaderStore,
+
+			currentView,
 		}
 	},
 
 	computed: {
-		currentView() {
-			return this.$navigation.active
-		},
-
 		dirs(): string[] {
 			const cumulativePath = (acc: string) => (value: string) => (acc += `${value}/`)
 			// Generate a cumulative path for each path segment: ['/', '/foo', '/foo/bar', ...] etc
@@ -123,8 +124,9 @@ export default defineComponent({
 
 		sections() {
 			return this.dirs.map((dir: string, index: number) => {
-				const fileid = this.getFileIdFromPath(dir)
-				const to = { ...this.$route, params: { fileid }, query: { dir } }
+				const source = this.getFileSourceFromPath(dir)
+				const node: Node | undefined = source ? this.getNodeFromSource(source) : undefined
+				const to = { ...this.$route, params: { node: node?.fileid }, query: { dir } }
 				return {
 					dir,
 					exact: true,
@@ -153,29 +155,29 @@ export default defineComponent({
 		},
 
 		selectedFiles() {
-			return this.selectionStore.selected
+			return this.selectionStore.selected as FileSource[]
 		},
 
 		draggingFiles() {
-			return this.draggingStore.dragging
+			return this.draggingStore.dragging as FileSource[]
 		},
 	},
 
 	methods: {
-		getNodeFromId(id: number): Node | undefined {
-			return this.filesStore.getNode(id)
+		getNodeFromSource(source: FileSource): Node | undefined {
+			return this.filesStore.getNode(source)
 		},
-		getFileIdFromPath(path: string): number | undefined {
-			return this.pathsStore.getPath(this.currentView?.id, path)
+		getFileSourceFromPath(path: string): FileSource | null {
+			return (this.currentView && this.pathsStore.getPath(this.currentView.id, path)) ?? null
 		},
 		getDirDisplayName(path: string): string {
 			if (path === '/') {
 				return this.$navigation?.active?.name || t('files', 'Home')
 			}
 
-			const fileId: number | undefined = this.getFileIdFromPath(path)
-			const node: Node | undefined = (fileId) ? this.getNodeFromId(fileId) : undefined
-			return node?.attributes?.displayName || basename(path)
+			const source = this.getFileSourceFromPath(path)
+			const node = source ? this.getNodeFromSource(source) : undefined
+			return node?.displayname || basename(path)
 		},
 
 		onClick(to) {
@@ -185,6 +187,10 @@ export default defineComponent({
 		},
 
 		onDragOver(event: DragEvent, path: string) {
+			if (!event.dataTransfer) {
+				return
+			}
+
 			// Cannot drop on the current directory
 			if (path === this.dirs[this.dirs.length - 1]) {
 				event.dataTransfer.dropEffect = 'none'
@@ -244,12 +250,12 @@ export default defineComponent({
 			}
 
 			// Else we're moving/copying files
-			const nodes = selection.map(fileid => this.filesStore.getNode(fileid)) as Node[]
+			const nodes = selection.map(source => this.filesStore.getNode(source)) as Node[]
 			await onDropInternalFiles(nodes, folder, contents.contents, isCopy)
 
 			// Reset selection after we dropped the files
 			// if the dropped files are within the selection
-			if (selection.some(fileid => this.selectedFiles.includes(fileid))) {
+			if (selection.some(source => this.selectedFiles.includes(source))) {
 				logger.debug('Dropped selection, resetting select store...')
 				this.selectionStore.reset()
 			}
@@ -284,6 +290,7 @@ export default defineComponent({
 	height: 100%;
 	margin-block: 0;
 	margin-inline: 10px;
+	min-width: 0;
 
 	:deep() {
 		a {

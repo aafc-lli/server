@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OC\Mail;
 
 use Egulias\EmailValidator\EmailValidator;
+use Egulias\EmailValidator\Validation\NoRFCWarningsValidation;
 use Egulias\EmailValidator\Validation\RFCValidation;
 use OCP\Defaults;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -78,6 +79,12 @@ use Symfony\Component\Mime\Exception\RfcComplianceException;
  * @package OC\Mail
  */
 class Mailer implements IMailer {
+	// Do not move this block or change it's content without contacting the release crew
+	public const DEFAULT_DIMENSIONS = '252x120';
+	// Do not move this block or change it's content without contacting the release crew
+
+	public const MAX_LOGO_SIZE = 105;
+
 	private ?MailerInterface $instance = null;
 
 	public function __construct(
@@ -123,6 +130,31 @@ class Mailer implements IMailer {
 	 * @since 12.0.0
 	 */
 	public function createEMailTemplate(string $emailId, array $data = []): IEMailTemplate {
+		$logoDimensions = $this->config->getAppValue('theming', 'logoDimensions', self::DEFAULT_DIMENSIONS);
+		if (str_contains($logoDimensions, 'x')) {
+			[$width, $height] = explode('x', $logoDimensions);
+			$width = (int) $width;
+			$height = (int) $height;
+
+			if ($width > self::MAX_LOGO_SIZE || $height > self::MAX_LOGO_SIZE) {
+				if ($width === $height) {
+					$logoWidth = self::MAX_LOGO_SIZE;
+					$logoHeight = self::MAX_LOGO_SIZE;
+				} elseif ($width > $height) {
+					$logoWidth = self::MAX_LOGO_SIZE;
+					$logoHeight = (int) (($height / $width) * self::MAX_LOGO_SIZE);
+				} else {
+					$logoWidth = (int) (($width / $height) * self::MAX_LOGO_SIZE);
+					$logoHeight = self::MAX_LOGO_SIZE;
+				}
+			} else {
+				$logoWidth = $width;
+				$logoHeight = $height;
+			}
+		} else {
+			$logoWidth = $logoHeight = null;
+		}
+
 		$class = $this->config->getSystemValueString('mail_template_class', '');
 
 		if ($class !== '' && class_exists($class) && is_a($class, EMailTemplate::class, true)) {
@@ -130,6 +162,8 @@ class Mailer implements IMailer {
 				$this->defaults,
 				$this->urlGenerator,
 				$this->l10nFactory,
+				$logoWidth,
+				$logoHeight,
 				$emailId,
 				$data
 			);
@@ -139,6 +173,8 @@ class Mailer implements IMailer {
 			$this->defaults,
 			$this->urlGenerator,
 			$this->l10nFactory,
+			$logoWidth,
+			$logoHeight,
 			$emailId,
 			$data
 		);
@@ -233,8 +269,10 @@ class Mailer implements IMailer {
 			// Shortcut: empty addresses are never valid
 			return false;
 		}
+
+		$strictMailCheck = $this->config->getAppValue('core', 'enforce_strict_email_check', 'no') === 'yes';
 		$validator = new EmailValidator();
-		$validation = new RFCValidation();
+		$validation = $strictMailCheck ? new NoRFCWarningsValidation() : new RFCValidation();
 
 		return $validator->isValid($email, $validation);
 	}

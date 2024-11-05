@@ -32,6 +32,7 @@ use OC\AppFramework\Middleware\Security\Exceptions\NotAdminException;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
+use OCP\Exceptions\AppConfigUnknownKeyException;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IL10N;
@@ -143,8 +144,23 @@ class AppConfigController extends OCSController {
 			return new DataResponse(['data' => ['message' => $e->getMessage()]], Http::STATUS_FORBIDDEN);
 		}
 
+		$type = null;
+		try {
+			$configDetails = $this->appConfig->getDetails($app, $key);
+			$type = $configDetails['type'];
+		} catch (AppConfigUnknownKeyException) {
+		}
+
 		/** @psalm-suppress InternalMethod */
-		$this->appConfig->setValueMixed($app, $key, $value);
+		match ($type) {
+			IAppConfig::VALUE_BOOL => $this->appConfig->setValueBool($app, $key, (bool)$value),
+			IAppConfig::VALUE_FLOAT => $this->appConfig->setValueFloat($app, $key, (float)$value),
+			IAppConfig::VALUE_INT => $this->appConfig->setValueInt($app, $key, (int)$value),
+			IAppConfig::VALUE_STRING => $this->appConfig->setValueString($app, $key, $value),
+			IAppConfig::VALUE_ARRAY => $this->appConfig->setValueArray($app, $key, \json_decode($value, true)),
+			default => $this->appConfig->setValueMixed($app, $key, $value),
+		};
+
 		return new DataResponse();
 	}
 

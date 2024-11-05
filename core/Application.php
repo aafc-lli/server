@@ -192,6 +192,12 @@ class Application extends App {
 			);
 
 			$event->addMissingIndex(
+				'schedulingobjects',
+				'schedulobj_lastmodified_idx',
+				['lastmodified']
+			);
+
+			$event->addMissingIndex(
 				'properties',
 				'properties_path_index',
 				['userid', 'propertypath']
@@ -237,6 +243,12 @@ class Application extends App {
 				'systemtag_object_mapping',
 				'systag_by_tagid',
 				['systemtagid', 'objecttype']
+			);
+
+			$event->addMissingIndex(
+				'systemtag_object_mapping',
+				'systag_by_objectid',
+				['objectid']
 			);
 		});
 

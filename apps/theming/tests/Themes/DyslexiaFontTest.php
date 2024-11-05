@@ -110,6 +110,7 @@ class DyslexiaFontTest extends TestCase {
 			$this->config,
 			$this->l10n,
 			$this->appManager,
+			null,
 		);
 
 		parent::setUp();
@@ -169,7 +170,7 @@ class DyslexiaFontTest extends TestCase {
 			->with('htaccess.IgnoreFrontController', false)
 			->willReturn($prettyUrlsEnabled);
 
-		$this->assertStringContainsString("'$webRoot/apps/theming/fonts/OpenDyslexic-Regular.woff'", $this->dyslexiaFont->getCustomCss());
+		$this->assertStringContainsString("'$webRoot/apps/theming/fonts/OpenDyslexic-Regular.otf'", $this->dyslexiaFont->getCustomCss());
 		$this->assertStringNotContainsString('index.php', $this->dyslexiaFont->getCustomCss());
 	}
 }

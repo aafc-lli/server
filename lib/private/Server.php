@@ -86,6 +86,7 @@ use OC\Diagnostics\QueryLogger;
 use OC\Federation\CloudFederationFactory;
 use OC\Federation\CloudFederationProviderManager;
 use OC\Federation\CloudIdManager;
+use OC\Files\Cache\FileAccess;
 use OC\Files\Config\MountProviderCollection;
 use OC\Files\Config\UserMountCache;
 use OC\Files\Config\UserMountCacheListener;
@@ -194,6 +195,7 @@ use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Federation\ICloudFederationFactory;
 use OCP\Federation\ICloudFederationProviderManager;
 use OCP\Federation\ICloudIdManager;
+use OCP\Files\Cache\IFileAccess;
 use OCP\Files\Config\IMountProviderCollection;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\IMimeTypeDetector;
@@ -449,6 +451,7 @@ class Server extends ServerContainer implements IServerContainer {
 		$this->registerService(ISystemTagObjectMapper::class, function (ContainerInterface $c) {
 			return $c->get('SystemTagManagerFactory')->getObjectMapper();
 		});
+		$this->registerAlias(IFileAccess::class, FileAccess::class);
 		$this->registerService('RootFolder', function (ContainerInterface $c) {
 			$manager = \OC\Files\Filesystem::getMountManager();
 			$view = new View();
@@ -529,7 +532,7 @@ class Server extends ServerContainer implements IServerContainer {
 
 		$this->registerService(\OC\User\Session::class, function (Server $c) {
 			$manager = $c->get(IUserManager::class);
-			$session = new \OC\Session\Memory('');
+			$session = new \OC\Session\Memory();
 			$timeFactory = new TimeFactory();
 			// Token providers might require a working database. This code
 			// might however be called when Nextcloud is not yet setup.
@@ -548,7 +551,7 @@ class Server extends ServerContainer implements IServerContainer {
 				$c->get(ISecureRandom::class),
 				$c->get('LockdownManager'),
 				$c->get(LoggerInterface::class),
-				$c->get(IEventDispatcher::class)
+				$c->get(IEventDispatcher::class),
 			);
 			/** @deprecated 21.0.0 use BeforeUserCreatedEvent event with the IEventDispatcher instead */
 			$userSession->listen('\OC\User', 'preCreateUser', function ($uid, $password) {

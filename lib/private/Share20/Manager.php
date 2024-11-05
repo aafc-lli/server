@@ -45,6 +45,7 @@ use OC\Files\Mount\MoveableMount;
 use OC\KnownUser\KnownUserService;
 use OC\Share20\Exception\ProviderException;
 use OCA\Files_Sharing\AppInfo\Application;
+use OCA\Files_Sharing\SharedStorage;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -310,8 +311,8 @@ class Manager implements IManager {
 
 		// If $expirationDate is falsy, noExpirationDate is true and expiration not enforced
 		// Then skip expiration date validation as null is accepted
-		if(!($share->getNoExpirationDate() && !$isEnforced)) {
-			if ($expirationDate != null) {
+		if(!$share->getNoExpirationDate() || $isEnforced) {
+			if ($expirationDate !== null) {
 				$expirationDate->setTimezone($this->dateTimeZone->getTimeZone());
 				$expirationDate->setTime(0, 0, 0);
 
@@ -394,7 +395,7 @@ class Manager implements IManager {
 			if ($expirationDate !== null) {
 				$expirationDate->setTimezone($this->dateTimeZone->getTimeZone());
 				$expirationDate->setTime(0, 0, 0);
-	
+
 				$date = new \DateTime('now', $this->dateTimeZone->getTimeZone());
 				$date->setTime(0, 0, 0);
 				if ($date >= $expirationDate) {
@@ -410,24 +411,24 @@ class Manager implements IManager {
 			} catch (\UnexpectedValueException $e) {
 				// This is a new share
 			}
-	
+
 			if ($fullId === null && $expirationDate === null && $this->shareApiLinkDefaultExpireDate()) {
 				$expirationDate = new \DateTime('now', $this->dateTimeZone->getTimeZone());
 				$expirationDate->setTime(0, 0, 0);
-	
+
 				$days = (int)$this->config->getAppValue('core', 'link_defaultExpDays', (string)$this->shareApiLinkDefaultExpireDays());
 				if ($days > $this->shareApiLinkDefaultExpireDays()) {
 					$days = $this->shareApiLinkDefaultExpireDays();
 				}
 				$expirationDate->add(new \DateInterval('P' . $days . 'D'));
 			}
-	
+
 			// If we enforce the expiration date check that is does not exceed
 			if ($isEnforced) {
 				if (empty($expirationDate)) {
 					throw new \InvalidArgumentException('Expiration date is enforced');
 				}
-	
+
 				$date = new \DateTime('now', $this->dateTimeZone->getTimeZone());
 				$date->setTime(0, 0, 0);
 				$date->add(new \DateInterval('P' . $this->shareApiLinkDefaultExpireDays() . 'D'));
@@ -452,9 +453,6 @@ class Manager implements IManager {
 			throw new \Exception($message);
 		}
 
-		if ($expirationDate instanceof \DateTime) {
-			$expirationDate->setTimezone(new \DateTimeZone(date_default_timezone_get()));
-		}
 		$share->setExpirationDate($expirationDate);
 
 		return $share;
@@ -605,7 +603,7 @@ class Manager implements IManager {
 		// No sense in checking if the method is not there.
 		if (method_exists($share, 'setParent')) {
 			$storage = $share->getNode()->getStorage();
-			if ($storage->instanceOfStorage('\OCA\Files_Sharing\ISharedStorage')) {
+			if ($storage->instanceOfStorage(SharedStorage::class)) {
 				/** @var \OCA\Files_Sharing\SharedStorage $storage */
 				$share->setParent($storage->getShareId());
 			}
@@ -699,13 +697,25 @@ class Manager implements IManager {
 				$this->linkCreateChecks($share);
 				$this->setLinkParent($share);
 
-				// For now ignore a set token.
-				$share->setToken(
-					$this->secureRandom->generate(
+				for ($i = 0; $i <= 3; $i++) {
+					$token = $this->secureRandom->generate(
 						\OC\Share\Constants::TOKEN_LENGTH,
 						\OCP\Security\ISecureRandom::CHAR_HUMAN_READABLE
-					)
-				);
+					);
+
+					try {
+						$this->getShareByToken($token);
+					} catch (\OCP\Share\Exceptions\ShareNotFound $e) {
+						// Set the unique token
+						$share->setToken($token);
+						break;
+					}
+
+					// Abort after 3 failed attempts
+					if ($i >= 3) {
+						throw new \Exception('Unable to generate a unique share token after 3 attempts.');
+					}
+				}
 
 				// Verify the expiration date
 				$share = $this->validateExpirationDateLink($share);

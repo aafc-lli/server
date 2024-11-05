@@ -29,19 +29,13 @@ import LinkSvg from '@mdi/svg/svg/link.svg?raw'
 import CircleSvg from '../../../../core/img/apps/circles.svg?raw'
 
 import { action as sidebarAction } from '../../../files/src/actions/sidebarAction'
-import { generateUrl } from '@nextcloud/router'
 import { getCurrentUser } from '@nextcloud/auth'
+import { generateAvatarSvg } from '../utils/AccountIcon.ts'
 
 import './sharingStatusAction.scss'
 
-console.warn(getCurrentUser());
-
-const generateAvatarSvg = (userId: string) => {
-	const avatarUrl = generateUrl('/avatar/{userId}/32', { userId })
-	return `<svg width="32" height="32" viewBox="0 0 32 32"
-		xmlns="http://www.w3.org/2000/svg" class="sharing-status__avatar">
-		<image href="${avatarUrl}" height="32" width="32" />
-	</svg>`
+const isExternal = (node: Node) => {
+	return node.attributes.remote_id !== undefined
 }
 
 export const action = new FileAction({
@@ -49,10 +43,9 @@ export const action = new FileAction({
 	displayName(nodes: Node[]) {
 		const node = nodes[0]
 		const shareTypes = Object.values(node?.attributes?.['share-types'] || {}).flat() as number[]
-		const ownerId = node?.attributes?.['owner-id']
 
 		if (shareTypes.length > 0
-			|| (ownerId && ownerId !== getCurrentUser()?.uid)) {
+			|| (node.owner !== getCurrentUser()?.uid || isExternal(node))) {
 			return t('files_sharing', 'Shared')
 		}
 
@@ -61,15 +54,14 @@ export const action = new FileAction({
 
 	title(nodes: Node[]) {
 		const node = nodes[0]
-		const ownerId = node?.attributes?.['owner-id']
-		const ownerDisplayName = node?.attributes?.['owner-display-name']
 
 		// Mixed share types
-		if (Array.isArray(node.attributes?.['share-types'])) {
+		if (Array.isArray(node.attributes?.['share-types']) && node.attributes?.['share-types'].length > 1) {
 			return t('files_sharing', 'Shared multiple times with different people')
 		}
 
-		if (ownerId && ownerId !== getCurrentUser()?.uid) {
+		if (node.owner && (node.owner !== getCurrentUser()?.uid || isExternal(node))) {
+			const ownerDisplayName = node?.attributes?.['owner-display-name']
 			return t('files_sharing', 'Shared by {ownerDisplayName}', { ownerDisplayName })
 		}
 
@@ -81,7 +73,7 @@ export const action = new FileAction({
 		const shareTypes = Object.values(node?.attributes?.['share-types'] || {}).flat() as number[]
 
 		// Mixed share types
-		if (Array.isArray(node.attributes?.['share-types'])) {
+		if (Array.isArray(node.attributes?.['share-types']) && node.attributes?.['share-types'].length > 1) {
 			return AccountPlusSvg
 		}
 
@@ -102,9 +94,9 @@ export const action = new FileAction({
 			return CircleSvg
 		}
 
-		const ownerId = node?.attributes?.['owner-id']
-		if (ownerId && ownerId !== getCurrentUser()?.uid) {
-			return generateAvatarSvg(ownerId)
+		if (node.owner && (node.owner !== getCurrentUser()?.uid || isExternal(node))) {
+			const sanitizeId = (id: string) => id.replace(/[^a-zA-Z0-9._%+@-]+/g, '').replace(/\//g, '')
+			return generateAvatarSvg(sanitizeId(node.owner), isExternal(node))
 		}
 
 		return AccountPlusSvg
@@ -116,8 +108,8 @@ export const action = new FileAction({
 		}
 
 		const node = nodes[0]
-		const ownerId = node?.attributes?.['owner-id']
-		const isMixed = Array.isArray(node.attributes?.['share-types'])
+		const shareTypes = node.attributes?.['share-types']
+		const isMixed = Array.isArray(shareTypes) && shareTypes.length > 0
 
 		// If the node is shared multiple times with
 		// different share types to the current user
@@ -126,7 +118,7 @@ export const action = new FileAction({
 		}
 
 		// If the node is shared by someone else
-		if (ownerId && ownerId !== getCurrentUser()?.uid) {
+		if (node.owner && (node.owner !== getCurrentUser()?.uid || isExternal(node))) {
 			return true
 		}
 

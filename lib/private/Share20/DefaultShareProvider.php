@@ -53,6 +53,7 @@ use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use OCP\Share\Exceptions\ShareNotFound;
 use OCP\Share\IAttributes;
+use OCP\Share\IManager;
 use OCP\Share\IShare;
 use OCP\Share\IShareProvider;
 use Psr\Log\LoggerInterface;
@@ -103,6 +104,7 @@ class DefaultShareProvider implements IShareProvider {
 		IFactory $l10nFactory,
 		IURLGenerator $urlGenerator,
 		ITimeFactory $timeFactory,
+		private IManager $shareManager,
 	) {
 		$this->dbConn = $connection;
 		$this->userManager = $userManager;
@@ -138,22 +140,28 @@ class DefaultShareProvider implements IShareProvider {
 		$qb->insert('share');
 		$qb->setValue('share_type', $qb->createNamedParameter($share->getShareType()));
 
+		$expirationDate = $share->getExpirationDate();
+		if ($expirationDate !== null) {
+			$expirationDate = clone $expirationDate;
+			$expirationDate->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+		}
+
 		if ($share->getShareType() === IShare::TYPE_USER) {
 			//Set the UID of the user we share with
 			$qb->setValue('share_with', $qb->createNamedParameter($share->getSharedWith()));
 			$qb->setValue('accepted', $qb->createNamedParameter(IShare::STATUS_PENDING));
 
 			//If an expiration date is set store it
-			if ($share->getExpirationDate() !== null) {
-				$qb->setValue('expiration', $qb->createNamedParameter($share->getExpirationDate(), 'datetime'));
+			if ($expirationDate !== null) {
+				$qb->setValue('expiration', $qb->createNamedParameter($expirationDate, 'datetime'));
 			}
 		} elseif ($share->getShareType() === IShare::TYPE_GROUP) {
 			//Set the GID of the group we share with
 			$qb->setValue('share_with', $qb->createNamedParameter($share->getSharedWith()));
 
 			//If an expiration date is set store it
-			if ($share->getExpirationDate() !== null) {
-				$qb->setValue('expiration', $qb->createNamedParameter($share->getExpirationDate(), 'datetime'));
+			if ($expirationDate !== null) {
+				$qb->setValue('expiration', $qb->createNamedParameter($expirationDate, 'datetime'));
 			}
 		} elseif ($share->getShareType() === IShare::TYPE_LINK) {
 			//set label for public link
@@ -169,8 +177,8 @@ class DefaultShareProvider implements IShareProvider {
 			$qb->setValue('password_by_talk', $qb->createNamedParameter($share->getSendPasswordByTalk(), IQueryBuilder::PARAM_BOOL));
 
 			//If an expiration date is set store it
-			if ($share->getExpirationDate() !== null) {
-				$qb->setValue('expiration', $qb->createNamedParameter($share->getExpirationDate(), 'datetime'));
+			if ($expirationDate !== null) {
+				$qb->setValue('expiration', $qb->createNamedParameter($expirationDate, 'datetime'));
 			}
 
 			if (method_exists($share, 'getParent')) {
@@ -250,6 +258,12 @@ class DefaultShareProvider implements IShareProvider {
 
 		$shareAttributes = $this->formatShareAttributes($share->getAttributes());
 
+		$expirationDate = $share->getExpirationDate();
+		if ($expirationDate !== null) {
+			$expirationDate = clone $expirationDate;
+			$expirationDate->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+		}
+
 		if ($share->getShareType() === IShare::TYPE_USER) {
 			/*
 			 * We allow updating the recipient on user shares.
@@ -264,7 +278,7 @@ class DefaultShareProvider implements IShareProvider {
 				->set('attributes', $qb->createNamedParameter($shareAttributes))
 				->set('item_source', $qb->createNamedParameter($share->getNode()->getId()))
 				->set('file_source', $qb->createNamedParameter($share->getNode()->getId()))
-				->set('expiration', $qb->createNamedParameter($share->getExpirationDate(), IQueryBuilder::PARAM_DATE))
+				->set('expiration', $qb->createNamedParameter($expirationDate, IQueryBuilder::PARAM_DATE))
 				->set('note', $qb->createNamedParameter($share->getNote()))
 				->set('accepted', $qb->createNamedParameter($share->getStatus()))
 				->execute();
@@ -278,7 +292,7 @@ class DefaultShareProvider implements IShareProvider {
 				->set('attributes', $qb->createNamedParameter($shareAttributes))
 				->set('item_source', $qb->createNamedParameter($share->getNode()->getId()))
 				->set('file_source', $qb->createNamedParameter($share->getNode()->getId()))
-				->set('expiration', $qb->createNamedParameter($share->getExpirationDate(), IQueryBuilder::PARAM_DATE))
+				->set('expiration', $qb->createNamedParameter($expirationDate, IQueryBuilder::PARAM_DATE))
 				->set('note', $qb->createNamedParameter($share->getNote()))
 				->execute();
 
@@ -293,7 +307,7 @@ class DefaultShareProvider implements IShareProvider {
 				->set('uid_initiator', $qb->createNamedParameter($share->getSharedBy()))
 				->set('item_source', $qb->createNamedParameter($share->getNode()->getId()))
 				->set('file_source', $qb->createNamedParameter($share->getNode()->getId()))
-				->set('expiration', $qb->createNamedParameter($share->getExpirationDate(), IQueryBuilder::PARAM_DATE))
+				->set('expiration', $qb->createNamedParameter($expirationDate, IQueryBuilder::PARAM_DATE))
 				->set('note', $qb->createNamedParameter($share->getNote()))
 				->execute();
 
@@ -320,7 +334,7 @@ class DefaultShareProvider implements IShareProvider {
 				->set('item_source', $qb->createNamedParameter($share->getNode()->getId()))
 				->set('file_source', $qb->createNamedParameter($share->getNode()->getId()))
 				->set('token', $qb->createNamedParameter($share->getToken()))
-				->set('expiration', $qb->createNamedParameter($share->getExpirationDate(), IQueryBuilder::PARAM_DATE))
+				->set('expiration', $qb->createNamedParameter($expirationDate, IQueryBuilder::PARAM_DATE))
 				->set('note', $qb->createNamedParameter($share->getNote()))
 				->set('label', $qb->createNamedParameter($share->getLabel()))
 				->set('hide_download', $qb->createNamedParameter($share->getHideDownload() ? 1 : 0), IQueryBuilder::PARAM_INT)
@@ -1281,6 +1295,7 @@ class DefaultShareProvider implements IShareProvider {
 	 *
 	 * @param string $uid
 	 * @param string $gid
+	 * @return void
 	 */
 	public function userDeletedFromGroup($uid, $gid) {
 		/*
@@ -1292,7 +1307,7 @@ class DefaultShareProvider implements IShareProvider {
 			->where($qb->expr()->eq('share_type', $qb->createNamedParameter(IShare::TYPE_GROUP)))
 			->andWhere($qb->expr()->eq('share_with', $qb->createNamedParameter($gid)));
 
-		$cursor = $qb->execute();
+		$cursor = $qb->executeQuery();
 		$ids = [];
 		while ($row = $cursor->fetch()) {
 			$ids[] = (int)$row['id'];
@@ -1309,7 +1324,46 @@ class DefaultShareProvider implements IShareProvider {
 					->where($qb->expr()->eq('share_type', $qb->createNamedParameter(IShare::TYPE_USERGROUP)))
 					->andWhere($qb->expr()->eq('share_with', $qb->createNamedParameter($uid)))
 					->andWhere($qb->expr()->in('parent', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)));
-				$qb->execute();
+				$qb->executeStatement();
+			}
+		}
+
+		if ($this->shareManager->shareWithGroupMembersOnly()) {
+			$user = $this->userManager->get($uid);
+			if ($user === null) {
+				return;
+			}
+			$userGroups = $this->groupManager->getUserGroupIds($user);
+			$userGroups = array_diff($userGroups, $this->shareManager->shareWithGroupMembersOnlyExcludeGroupsList());
+
+			// Delete user shares received by the user from users in the group.
+			$userReceivedShares = $this->shareManager->getSharedWith($uid, IShare::TYPE_USER, null, -1);
+			foreach ($userReceivedShares as $share) {
+				$owner = $this->userManager->get($share->getSharedBy());
+				if ($owner === null) {
+					continue;
+				}
+				$ownerGroups = $this->groupManager->getUserGroupIds($owner);
+				$mutualGroups = array_intersect($userGroups, $ownerGroups);
+
+				if (count($mutualGroups) === 0) {
+					$this->shareManager->deleteShare($share);
+				}
+			}
+
+			// Delete user shares from the user to users in the group.
+			$userEmittedShares = $this->shareManager->getSharesBy($uid, IShare::TYPE_USER, null, true, -1);
+			foreach ($userEmittedShares as $share) {
+				$recipient = $this->userManager->get($share->getSharedWith());
+				if ($recipient === null) {
+					continue;
+				}
+				$recipientGroups = $this->groupManager->getUserGroupIds($recipient);
+				$mutualGroups = array_intersect($userGroups, $recipientGroups);
+
+				if (count($mutualGroups) === 0) {
+					$this->shareManager->deleteShare($share);
+				}
 			}
 		}
 	}

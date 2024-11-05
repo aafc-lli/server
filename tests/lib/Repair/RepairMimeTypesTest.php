@@ -41,12 +41,15 @@ class RepairMimeTypesTest extends \Test\TestCase {
 		$config = $this->getMockBuilder(IConfig::class)
 			->disableOriginalConstructor()
 			->getMock();
-		$config->expects($this->any())
-			->method('getSystemValueString')
+		$config->method('getSystemValueString')
 			->with('version')
+			->willReturn('11.0.0.0');
+		$config->method('getAppValue')
+			->with('files', 'mimetype_version')
 			->willReturn('11.0.0.0');
 
 		$this->storage = new \OC\Files\Storage\Temporary([]);
+		$this->storage->getScanner()->scan('');
 
 		$this->repair = new \OC\Repair\RepairMimeTypes($config, \OC::$server->getDatabaseConnection());
 	}

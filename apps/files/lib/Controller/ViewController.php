@@ -152,7 +152,6 @@ class ViewController extends Controller {
 	/**
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
-	 * @UseSession
 	 *
 	 * @param string $dir
 	 * @param string $view
@@ -167,7 +166,6 @@ class ViewController extends Controller {
 	/**
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
-	 * @UseSession
 	 *
 	 * @param string $dir
 	 * @param string $view
@@ -182,7 +180,6 @@ class ViewController extends Controller {
 	/**
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
-	 * @UseSession
 	 *
 	 * @param string $dir
 	 * @param string $view
@@ -280,58 +277,7 @@ class ViewController extends Controller {
 		$policy->addAllowedWorkerSrcDomain('\'self\'');
 		$response->setContentSecurityPolicy($policy);
 
-		$this->provideInitialState($dir, $fileid);
-
 		return $response;
-	}
-
-	/**
-	 * Add openFileInfo in initialState.
-	 * @param string $dir - the ?dir= URL param
-	 * @param string $fileid - the fileid URL param
-	 * @return void
-	 */
-	private function provideInitialState(string $dir, ?string $fileid): void {
-		if ($fileid === null) {
-			return;
-		}
-
-		$user = $this->userSession->getUser();
-
-		if ($user === null) {
-			return;
-		}
-
-		$uid = $user->getUID();
-		$userFolder = $this->rootFolder->getUserFolder($uid);
-		$node = $userFolder->getFirstNodeById((int) $fileid);
-
-		if ($node === null) {
-			return;
-		}
-
-		// properly format full path and make sure
-		// we're relative to the user home folder
-		$isRoot = $node === $userFolder;
-		$path = $userFolder->getRelativePath($node->getPath());
-		$directory = $userFolder->getRelativePath($node->getParent()->getPath());
-
-		// Prevent opening a file from another folder.
-		if ($dir !== $directory) {
-			return;
-		}
-
-		$this->initialState->provideInitialState(
-			'openFileInfo', [
-				'id' => $node->getId(),
-				'name' => $isRoot ? '' : $node->getName(),
-				'path' => $path,
-				'directory' => $directory,
-				'mime' => $node->getMimetype(),
-				'type' => $node->getType(),
-				'permissions' => $node->getPermissions(),
-			]
-		);
 	}
 
 	/**
@@ -394,6 +340,8 @@ class ViewController extends Controller {
 			} else {
 				// set parent path as dir
 				$params['dir'] = $baseFolder->getRelativePath($node->getParent()->getPath());
+				// open the file by default (opening the viewer)
+				$params['openfile'] = 'true';
 			}
 			return new RedirectResponse($this->urlGenerator->linkToRoute('files.view.indexViewFileid', $params));
 		}

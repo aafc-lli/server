@@ -1668,17 +1668,24 @@ class ViewTest extends \Test\TestCase {
 	public function testMoveMountPointIntoSharedFolder() {
 		self::loginAsUser($this->user);
 
-		[$mount1] = $this->createTestMovableMountPoints([
+		[$mount1, $mount2] = $this->createTestMovableMountPoints([
 			$this->user . '/files/mount1',
+			$this->user . '/files/mount2',
 		]);
 
 		$mount1->expects($this->never())
 			->method('moveMount');
 
+		$mount2->expects($this->once())
+			->method('moveMount')
+			->willReturn(true);
+
 		$view = new View('/' . $this->user . '/files/');
 		$view->mkdir('shareddir');
 		$view->mkdir('shareddir/sub');
 		$view->mkdir('shareddir/sub2');
+		// Create a similar named but non-shared folder
+		$view->mkdir('shareddir notshared');
 
 		$fileId = $view->getFileInfo('shareddir')->getId();
 		$userObject = \OC::$server->getUserManager()->createUser('test2', 'IHateNonMockableStaticClasses');
@@ -1697,6 +1704,7 @@ class ViewTest extends \Test\TestCase {
 		$this->assertFalse($view->rename('mount1', 'shareddir'), 'Cannot overwrite shared folder');
 		$this->assertFalse($view->rename('mount1', 'shareddir/sub'), 'Cannot move mount point into shared folder');
 		$this->assertFalse($view->rename('mount1', 'shareddir/sub/sub2'), 'Cannot move mount point into shared subfolder');
+		$this->assertTrue($view->rename('mount2', 'shareddir notshared/sub'), 'Can move mount point into a similarly named but non-shared folder');
 
 		$shareManager->deleteShare($share);
 		$userObject->delete();
@@ -2742,5 +2750,36 @@ class ViewTest extends \Test\TestCase {
 		$this->assertFalse($view->fopen('foo.txt', 'r'));
 
 		$this->assertFalse($cache->inCache('foo.txt'));
+	}
+
+	public function testMountpointParentsCreated() {
+		$storage1 = $this->getTestStorage();
+		Filesystem::mount($storage1, [], '/');
+
+		$storage2 = $this->getTestStorage();
+		Filesystem::mount($storage2, [], '/A/B/C');
+
+		$rootView = new View('');
+
+		$folderData = $rootView->getDirectoryContent('/');
+		$this->assertCount(4, $folderData);
+		$this->assertEquals('folder', $folderData[0]['name']);
+		$this->assertEquals('foo.png', $folderData[1]['name']);
+		$this->assertEquals('foo.txt', $folderData[2]['name']);
+		$this->assertEquals('A', $folderData[3]['name']);
+
+		$folderData = $rootView->getDirectoryContent('/A');
+		$this->assertCount(1, $folderData);
+		$this->assertEquals('B', $folderData[0]['name']);
+
+		$folderData = $rootView->getDirectoryContent('/A/B');
+		$this->assertCount(1, $folderData);
+		$this->assertEquals('C', $folderData[0]['name']);
+
+		$folderData = $rootView->getDirectoryContent('/A/B/C');
+		$this->assertCount(3, $folderData);
+		$this->assertEquals('folder', $folderData[0]['name']);
+		$this->assertEquals('foo.png', $folderData[1]['name']);
+		$this->assertEquals('foo.txt', $folderData[2]['name']);
 	}
 }

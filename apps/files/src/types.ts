@@ -24,12 +24,12 @@ import type { Upload } from '@nextcloud/upload'
 
 // Global definitions
 export type Service = string
-export type FileId = number
+export type FileSource = string
 export type ViewId = string
 
 // Files store
 export type FilesStore = {
-	[fileid: FileId]: Node
+	[source: FileSource]: Node
 }
 
 export type RootsStore = {
@@ -48,7 +48,7 @@ export interface RootOptions {
 
 // Paths store
 export type PathConfig = {
-	[path: string]: number
+	[path: string]: FileSource
 }
 
 export type ServicesState = {
@@ -62,7 +62,7 @@ export type PathsStore = {
 export interface PathOptions {
 	service: Service
 	path: string
-	fileid: FileId
+	source: FileSource
 }
 
 // User config store
@@ -74,8 +74,8 @@ export interface UserConfigStore {
 }
 
 export interface SelectionStore {
-	selected: FileId[]
-	lastSelection: FileId[]
+	selected: FileSource[]
+	lastSelection: FileSource[]
 	lastSelectedIndex: number | null
 }
 
@@ -109,7 +109,7 @@ export interface UploaderStore {
 
 // Drag and drop store
 export interface DragAndDropStore {
-	dragging: FileId[]
+	dragging: FileSource[]
 }
 
 export interface TemplateFile {
@@ -121,4 +121,19 @@ export interface TemplateFile {
 	mimetypes: string[]
 	ratio?: number
 	templates?: Record<string, unknown>[]
+}
+
+export type Capabilities = {
+	files: {
+		bigfilechunking: boolean
+		blacklisted_files: string[]
+		forbidden_filename_basenames: string[]
+		forbidden_filename_characters: string[]
+		forbidden_filename_extensions: string[]
+		forbidden_filenames: string[]
+		undelete: boolean
+		version_deletion: boolean
+		version_labeling: boolean
+		versioning: boolean
+	}
 }

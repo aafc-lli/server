@@ -447,6 +447,18 @@ class OC_Image implements \OCP\IImage {
 		return min(100, max(10, (int) $quality));
 	}
 
+	private function isValidExifData(array $exif): bool {
+		if (!isset($exif['Orientation'])) {
+			return false;
+		}
+
+		if (!is_numeric($exif['Orientation'])) {
+			return false;
+		}
+
+		return true;
+	}
+
 	/**
 	 * (I'm open for suggestions on better method name ;)
 	 * Get the orientation based on EXIF data.
@@ -475,14 +487,11 @@ class OC_Image implements \OCP\IImage {
 			return -1;
 		}
 		$exif = @exif_read_data($this->filePath, 'IFD0');
-		if (!$exif) {
-			return -1;
-		}
-		if (!isset($exif['Orientation'])) {
+		if (!$exif || !$this->isValidExifData($exif)) {
 			return -1;
 		}
 		$this->exif = $exif;
-		return $exif['Orientation'];
+		return (int)$exif['Orientation'];
 	}
 
 	public function readExif($data): void {
@@ -496,10 +505,7 @@ class OC_Image implements \OCP\IImage {
 		}
 
 		$exif = @exif_read_data('data://image/jpeg;base64,' . base64_encode($data));
-		if (!$exif) {
-			return;
-		}
-		if (!isset($exif['Orientation'])) {
+		if (!$exif || !$this->isValidExifData($exif)) {
 			return;
 		}
 		$this->exif = $exif;
@@ -626,7 +632,7 @@ class OC_Image implements \OCP\IImage {
 	private function checkImageSize($path) {
 		$size = @getimagesize($path);
 		if (!$size) {
-			return true;
+			return false;
 		}
 
 		$width = $size[0];
@@ -647,7 +653,7 @@ class OC_Image implements \OCP\IImage {
 	private function checkImageDataSize($data) {
 		$size = @getimagesizefromstring($data);
 		if (!$size) {
-			return true;
+			return false;
 		}
 
 		$width = $size[0];
@@ -694,7 +700,7 @@ class OC_Image implements \OCP\IImage {
 					if (!$this->checkImageSize($imagePath)) {
 						return false;
 					}
-					if (getimagesize($imagePath) !== false) {
+					if (@getimagesize($imagePath) !== false) {
 						$this->resource = @imagecreatefromjpeg($imagePath);
 					} else {
 						$this->logger->debug('OC_Image->loadFromFile, JPG image not valid: ' . $imagePath, ['app' => 'core']);
@@ -748,9 +754,56 @@ class OC_Image implements \OCP\IImage {
 					if (!$this->checkImageSize($imagePath)) {
 						return false;
 					}
-					$this->resource = @imagecreatefromwebp($imagePath);
+
+					// Check for animated header before generating preview since libgd does not handle them well
+					// Adapted from here: https://stackoverflow.com/a/68491679/4085517 (stripped to only to check for animations + added additional error checking)
+					// Header format details here: https://developers.google.com/speed/webp/docs/riff_container
+
+					// Load up the header data, if any
+					$fp = fopen($imagePath, 'rb');
+					if (!$fp) {
+						return false;
+					}
+					$data = fread($fp, 90);
+					if (!$data) {
+						return false;
+					}
+					fclose($fp);
+					unset($fp);
+
+					$headerFormat = 'A4Riff/' . // get n string
+						'I1Filesize/' . // get integer (file size but not actual size)
+						'A4Webp/' . // get n string
+						'A4Vp/' . // get n string
+						'A74Chunk';
+
+					$header = unpack($headerFormat, $data);
+					unset($data, $headerFormat);
+					if (!$header) {
+						return false;
+					}
+
+					// Check if we're really dealing with a valid WEBP header rather than just one suffixed ".webp"
+					if (!isset($header['Riff']) || strtoupper($header['Riff']) !== 'RIFF') {
+						return false;
+					}
+					if (!isset($header['Webp']) || strtoupper($header['Webp']) !== 'WEBP') {
+						return false;
+					}
+					if (!isset($header['Vp']) || strpos(strtoupper($header['Vp']), 'VP8') === false) {
+						return false;
+					}
+
+					// Check for animation indicators
+					if (strpos(strtoupper($header['Chunk']), 'ANIM') !== false || strpos(strtoupper($header['Chunk']), 'ANMF') !== false) {
+						// Animated so don't let it reach libgd
+						$this->logger->debug('OC_Image->loadFromFile, animated WEBP images not supported: ' . $imagePath, ['app' => 'core']);
+					} else {
+						// We're safe so give it to libgd
+						$this->resource = @imagecreatefromwebp($imagePath);
+					}
 				} else {
-					$this->logger->debug('OC_Image->loadFromFile, webp images not supported: ' . $imagePath, ['app' => 'core']);
+					$this->logger->debug('OC_Image->loadFromFile, WEBP images not supported: ' . $imagePath, ['app' => 'core']);
 				}
 				break;
 				/*

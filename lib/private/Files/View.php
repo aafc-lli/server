@@ -1373,9 +1373,6 @@ class View {
 		if (!Filesystem::isValidPath($path)) {
 			return false;
 		}
-		if (Cache\Scanner::isPartialFile($path)) {
-			return $this->getPartFileInfo($path);
-		}
 		$relativePath = $path;
 		$path = Filesystem::normalizePath($this->fakeRoot . '/' . $path);
 
@@ -1386,12 +1383,20 @@ class View {
 			$data = $this->getCacheEntry($storage, $internalPath, $relativePath);
 
 			if (!$data instanceof ICacheEntry) {
+				if (Cache\Scanner::isPartialFile($relativePath)) {
+					return $this->getPartFileInfo($relativePath);
+				}
+
 				return false;
 			}
 
 			if ($mount instanceof MoveableMount && $internalPath === '') {
 				$data['permissions'] |= \OCP\Constants::PERMISSION_DELETE;
 			}
+			if ($internalPath === '' && $data['name']) {
+				$data['name'] = basename($path);
+			}
+
 			$ownerId = $storage->getOwner($internalPath);
 			$owner = null;
 			if ($ownerId !== null && $ownerId !== false) {
@@ -1526,6 +1531,15 @@ class View {
 					if ($pos = strpos($relativePath, '/')) {
 						//mountpoint inside subfolder add size to the correct folder
 						$entryName = substr($relativePath, 0, $pos);
+
+						// Create parent folders if the mountpoint is inside a subfolder that doesn't exist yet
+						if (!isset($files[$entryName]) && $this->mkdir($path . '/' . $entryName) !== false) {
+							$info = $this->getFileInfo($path . '/' . $entryName);
+							if ($info !== false) {
+								$files[$entryName] = $info;
+							}
+						}
+
 						if (isset($files[$entryName])) {
 							$files[$entryName]->addSubEntry($rootEntry, $mountPoint);
 						}
@@ -1815,7 +1829,8 @@ class View {
 		}, $providers));
 
 		foreach ($shares as $share) {
-			if (str_starts_with($targetPath, $share->getNode()->getPath())) {
+			$sharedPath = $share->getNode()->getPath();
+			if ($targetPath === $sharedPath || str_starts_with($targetPath, $sharedPath . '/')) {
 				$this->logger->debug(
 					'It is not allowed to move one mount point into a shared folder',
 					['app' => 'files']);

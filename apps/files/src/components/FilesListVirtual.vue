@@ -34,6 +34,7 @@
 		:scroll-to-index="scrollToIndex"
 		:caption="caption">
 		<template v-if="!isNoneSelected" #header-overlay>
+			<span class="files-list__selected">{{ t('files', '{count} selected', { count: selectedNodes.length }) }}</span>
 			<FilesListTableHeaderActions :current-view="currentView"
 				:selected-nodes="selectedNodes" />
 		</template>
@@ -75,8 +76,8 @@ import type { UserConfig } from '../types'
 
 import { getFileListHeaders, Folder, View, getFileActions, FileType } from '@nextcloud/files'
 import { showError } from '@nextcloud/dialogs'
-import { loadState } from '@nextcloud/initial-state'
 import { translate as t, translatePlural as n } from '@nextcloud/l10n'
+import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { defineComponent } from 'vue'
 
 import { action as sidebarAction } from '../actions/sidebarAction.ts'
@@ -176,7 +177,7 @@ export default defineComponent({
 			if (this.filesListWidth < 768) {
 				return false
 			}
-			return this.nodes.some(node => node.attributes.size !== undefined)
+			return this.nodes.some(node => node.size !== undefined)
 		},
 
 		sortedHeaders() {
@@ -205,14 +206,27 @@ export default defineComponent({
 	},
 
 	watch: {
-		fileId(fileId) {
-			this.scrollToFile(fileId, false)
+		fileId: {
+			handler(fileId) {
+				this.scrollToFile(fileId, false)
+			},
+			immediate: true,
 		},
 
-		openFile(open: boolean) {
-			if (open) {
-				this.$nextTick(() => this.handleOpenFile(this.fileId))
-			}
+		openFile: {
+			handler() {
+				// wait for scrolling and updating the actions to settle
+				this.$nextTick(() => {
+					if (this.fileId) {
+						if (this.openFile) {
+							this.handleOpenFile(this.fileId)
+						} else {
+							this.unselectFile()
+						}
+					}
+				})
+			},
+			immediate: true,
 		},
 	},
 
@@ -221,16 +235,20 @@ export default defineComponent({
 		const mainContent = window.document.querySelector('main.app-content') as HTMLElement
 		mainContent.addEventListener('dragover', this.onDragOver)
 
-		// handle initially opening a given file
-		const { id } = loadState<{ id?: number }>('files', 'openFileInfo', {})
-		this.scrollToFile(id ?? this.fileId)
-		this.openSidebarForFile(id ?? this.fileId)
-		this.handleOpenFile(id ?? null)
+		subscribe('files:sidebar:closed', this.unselectFile)
+
+		// If the file list is mounted with a fileId specified
+		// then we need to open the sidebar initially
+		if (this.fileId) {
+			this.openSidebarForFile(this.fileId)
+		}
 	},
 
 	beforeDestroy() {
 		const mainContent = window.document.querySelector('main.app-content') as HTMLElement
 		mainContent.removeEventListener('dragover', this.onDragOver)
+
+		unsubscribe('files:sidebar:closed', this.unselectFile)
 	},
 
 	methods: {
@@ -258,6 +276,17 @@ export default defineComponent({
 			}
 		},
 
+		unselectFile() {
+			// If the Sidebar is closed and if openFile is false, remove the file id from the URL
+			if (!this.openFile && OCA.Files.Sidebar.file === '') {
+				window.OCP.Files.Router.goToRoute(
+					null,
+					{ ...this.$route.params, fileid: String(this.currentFolder.fileid ?? '') },
+					this.$route.query,
+				)
+			}
+		},
+
 		/**
 		 * Handle opening a file (e.g. by ?openfile=true)
 		 * @param fileId File to open
@@ -274,14 +303,18 @@ export default defineComponent({
 
 			logger.debug('Opening file ' + node.path, { node })
 			this.openFileId = fileId
-			getFileActions()
-				.filter(action => !action.enabled || action.enabled([node], this.currentView))
+			const defaultAction = getFileActions()
+				// Get only default actions (visible and hidden)
+				.filter(action => !!action?.default)
+				// Find actions that are either always enabled or enabled for the current node
+				.filter((action) => !action.enabled || action.enabled([node], this.currentView))
+				// Sort enabled default actions by order
 				.sort((a, b) => (a.order || 0) - (b.order || 0))
-				.filter(action => !!action?.default)[0].exec(node, this.currentView, this.currentFolder.path)
-		},
-
-		getFileId(node) {
-			return node.fileid
+				// Get the first one
+				.at(0)
+			// Some file types do not have a default action (e.g. they can only be downloaded)
+			// So if there is an enabled default action, so execute it
+			defaultAction?.exec(node, this.currentView, this.currentFolder.path)
 		},
 
 		onDragOver(event: DragEvent) {
@@ -357,6 +390,11 @@ export default defineComponent({
 			flex-direction: column;
 		}
 
+		.files-list__selected {
+			padding-right: 12px;
+			white-space: nowrap;
+		}
+
 		.files-list__table {
 			display: block;
 
@@ -399,11 +437,6 @@ export default defineComponent({
 			position: sticky;
 			z-index: 10;
 			top: 0;
-		}
-
-		// Table footer
-		.files-list__tfoot {
-			min-height: 300px;
 		}
 
 		tr {
@@ -583,24 +616,26 @@ export default defineComponent({
 			// Take as much space as possible
 			flex: 1 1 auto;
 
-			a {
+			button.files-list__row-name-link {
 				display: flex;
 				align-items: center;
+				text-align: start;
 				// Fill cell height and width
 				width: 100%;
 				height: 100%;
 				// Necessary for flex grow to work
 				min-width: 0;
+				margin: 0;
 
 				// Already added to the inner text, see rule below
 				&:focus-visible {
-					outline: none;
+					outline: none !important;
 				}
 
 				// Keyboard indicator a11y
 				&:focus .files-list__row-name-text {
-					outline: 2px solid var(--color-main-text) !important;
-					border-radius: 20px;
+					outline: var(--border-width-input-focused) solid var(--color-main-text) !important;
+					border-radius: var(--border-radius-element);
 				}
 				&:focus:not(:focus-visible) .files-list__row-name-text {
 					outline: none !important;
@@ -610,7 +645,7 @@ export default defineComponent({
 			.files-list__row-name-text {
 				color: var(--color-main-text);
 				// Make some space for the outline
-				padding: 5px 10px;
+				padding: var(--default-grid-baseline) calc(2 * var(--default-grid-baseline));
 				margin-left: -10px;
 				// Align two name and ext
 				display: inline-flex;
@@ -749,12 +784,6 @@ tbody.files-list__tbody.files-list__tbody--grid {
 			// Visual balance, we use half of the clickable area
 			// as a margin around the preview
 			padding-top: var(--half-clickable-area);
-		}
-
-		a.files-list__row-name-link {
-			// Minus action menu
-			width: calc(100% - var(--clickable-area));
-			height: var(--clickable-area);
 		}
 
 		.files-list__row-name-text {

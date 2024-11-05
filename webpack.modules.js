@@ -41,6 +41,7 @@ module.exports = {
 		'legacy-unified-search': path.join(__dirname, 'core/src', 'legacy-unified-search.js'),
 		'unsupported-browser': path.join(__dirname, 'core/src', 'unsupported-browser.js'),
 		'unsupported-browser-redirect': path.join(__dirname, 'core/src', 'unsupported-browser-redirect.js'),
+		public: path.join(__dirname, 'core/src', 'public.ts'),
 	},
 	dashboard: {
 		main: path.join(__dirname, 'apps/dashboard/src', 'main.js'),
@@ -72,7 +73,7 @@ module.exports = {
 		'personal-settings': path.join(__dirname, 'apps/files_sharing/src', 'personal-settings.js'),
 	},
 	files_trashbin: {
-		main: path.join(__dirname, 'apps/files_trashbin/src', 'main.ts'),
+		init: path.join(__dirname, 'apps/files_trashbin/src', 'files-init.ts'),
 	},
 	files_versions: {
 		files_versions: path.join(__dirname, 'apps/files_versions/src', 'files_versions_tab.js'),
@@ -81,6 +82,7 @@ module.exports = {
 		oauth2: path.join(__dirname, 'apps/oauth2/src', 'main.js'),
 	},
 	federatedfilesharing: {
+		external: path.join(__dirname, 'apps/federatedfilesharing/src', 'external.js'),
 		'vue-settings-admin': path.join(__dirname, 'apps/federatedfilesharing/src', 'main-admin.js'),
 		'vue-settings-personal': path.join(__dirname, 'apps/federatedfilesharing/src', 'main-personal.js'),
 	},

@@ -224,12 +224,14 @@ class SFTP extends Common {
 	 */
 	private function hostKeysPath() {
 		try {
-			$storage_view = \OCP\Files::getStorage('files_external');
-			if ($storage_view) {
-				return \OC::$server->getConfig()->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') .
-					$storage_view->getAbsolutePath('') .
-					'ssh_hostKeys';
+			$userId = \OC_User::getUser();
+			if ($userId === false) {
+				return false;
 			}
+
+			$view = new \OC\Files\View('/' . $userId . '/files_external');
+
+			return $view->getLocalFile('ssh_hostKeys');
 		} catch (\Exception $e) {
 		}
 		return false;
@@ -469,10 +471,14 @@ class SFTP extends Common {
 		try {
 			$stat = $this->getConnection()->stat($this->absPath($path));
 
-			$mtime = $stat ? (int)$stat['mtime'] : -1;
-			$size = $stat ? (int)$stat['size'] : 0;
+			$mtime = isset($stat['mtime']) ? (int)$stat['mtime'] : -1;
+			$size = isset($stat['size']) ? (int)$stat['size'] : 0;
 
-			return ['mtime' => $mtime, 'size' => $size, 'ctime' => -1];
+			return [
+				'mtime' => $mtime,
+				'size' => $size,
+				'ctime' => -1
+			];
 		} catch (\Exception $e) {
 			return false;
 		}
