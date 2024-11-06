@@ -97,8 +97,11 @@ export default {
 		async onNewComment(message) {
 			this.loading = true
 			try {
-				const newComment = await NewComment(this.resourceType, this.resourceId, message)
-				logger.debug('New comment posted', { resourceType: this.resourceType, resourceId: this.resourceId, newComment })
+				// !CDSP: This uses the ID of the first file details was opened for without this hacky fix.
+				const actualResourceId = (window.location.pathname + '').split('/').pop()
+				const newComment = await NewComment(this.resourceType, actualResourceId, message)
+				logger.debug('New comment posted', { resourceType: this.resourceType, resourceId: actualResourceId, newComment })
+				// !CDSP: End change.
 				this.$emit('new', newComment)
 
 				// Clear old content

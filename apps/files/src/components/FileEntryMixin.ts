@@ -299,6 +299,11 @@ export default defineComponent({
 				return false
 			}
 
+			// !CDSP: Open details rather than download files on click.
+			if (this.source?.type == FileType.File) {
+				this.openDetailsIfAvailable(event);
+			} else
+			// !CDSP: End change.
 			if (this.defaultFileAction) {
 				event.preventDefault()
 				event.stopPropagation()

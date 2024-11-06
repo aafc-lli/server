@@ -460,6 +460,11 @@ export default defineComponent({
 		subscribe('nextcloud:unified-search.search', this.onSearch)
 		subscribe('nextcloud:unified-search.reset', this.resetSearch)
 
+		// !CDSP: Register to favorite/unfavorite events so we actually update.
+		subscribe('files:favorites:added', this.fetchContent)
+		subscribe('files:favorites:removed', this.fetchContent)
+		// !CDSP: End change.
+
 		// reload on settings change
 		this.unsubscribeStoreCallback = this.userConfigStore.$subscribe(() => this.fetchContent(), { deep: true })
 	},
@@ -469,6 +474,12 @@ export default defineComponent({
 		unsubscribe('files:node:updated', this.onUpdatedNode)
 		unsubscribe('nextcloud:unified-search.search', this.onSearch)
 		unsubscribe('nextcloud:unified-search.reset', this.resetSearch)
+		
+		// !CDSP: Unregister above callbacks.
+		unsubscribe('files:favorites:added', this.fetchContent)
+		unsubscribe('files:favorites:removed', this.fetchContent)
+		// !CDSP: End change.
+
 		this.unsubscribeStoreCallback()
 	},
 

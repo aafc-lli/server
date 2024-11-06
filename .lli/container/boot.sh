@@ -25,7 +25,7 @@ enable_apps=(
 )
 
 data_directory=/ncloud/data
-ncloud_version="29.0.2.2"
+ncloud_version="29.0.8.1"
 # ----
 
 exec_occ() {
