@@ -22,3 +22,6 @@
 [submodule "apps/user_saml"]
 	path = apps/user_saml
 	url = https://github.com/aafc-lli/cdsp-saml
+[submodule "apps/group_everyone"]
+	path = apps/group_everyone
+	url = https://github.com/icewind1991/group_everyone.git
