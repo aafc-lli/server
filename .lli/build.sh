@@ -6,7 +6,7 @@ set -e
 image_tag=$1
 flags=$2
 
-if [[ $flags != *"reuse-ctx"* ]]; then
+if [[ $flags != *"skip-ctx"* ]]; then
     echo "Populating build context..."
 
     if [[ -d context ]]; then
@@ -37,7 +37,7 @@ fi
 echo "Building image..."
 ext_build_args=()
 if [[ $flags == *"debug"* ]]; then
-    ext_build_args+=(--progress simple --no-cache)
+    ext_build_args+=(--progress plain)
 fi
 if [[ $flags == *"no-cache"* ]]; then
     ext_build_args+=(--no-cache)
