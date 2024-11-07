@@ -92,6 +92,7 @@ ENV TZ America/New_York
 
 # Install additional PHP deps.
 RUN echo \
+    $PHP_VER-xdebug\
     $PHP_VER-pgsql \
     $PHP_VER-fpm \
     $PHP_VER-redis \
@@ -123,5 +124,8 @@ COPY container/boot.sh boot.sh
 # Init supplimentary log.
 RUN touch /ncloud/ncloud.log && \
     chown www-data:www-data /ncloud/ncloud.log
+
+RUN apt-get install -y dos2unix
+RUN dos2unix *.sh
 
 CMD ./boot.sh

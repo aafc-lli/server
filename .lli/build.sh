@@ -37,7 +37,7 @@ fi
 echo "Building image..."
 ext_build_args=()
 if [[ $flags == *"debug"* ]]; then
-    ext_build_args+=(--progress simple --no-cache)
+    ext_build_args+=(--progress plain)
 fi
 if [[ $flags == *"no-cache"* ]]; then
     ext_build_args+=(--no-cache)
