@@ -8,7 +8,6 @@ disable_apps=(
     "dashboard"
     "user_status"
     "files_reminders"
-    "comments"
 )
 enable_apps=(
     # Default.
@@ -16,9 +15,11 @@ enable_apps=(
     "files_external"
     # Third-party.
     "activity"
+    "comments"
     "announcementcenter"
     "notifications"
     "group_everyone"
+    "files_downloadactivity"
     # First-party.
     "cdsp"
     "user_saml"
