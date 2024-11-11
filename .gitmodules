@@ -26,7 +26,7 @@
 	path = apps/privacy
 	url = https://github.com/nextcloud/privacy
 [submodule "apps/logreader"]
-	path = apps/logready
+	path = apps/logreader
 	url = https://github.com/nextcloud/logreader
 [submodule "apps/password_policy"]
 	path = apps/password_policy
