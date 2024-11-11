@@ -19,6 +19,11 @@ enable_apps=(
     "announcementcenter"
     "notifications"
     "group_everyone"
+    "logreader"
+    "user_retention"
+    "password_policy"
+    "privacy"
+    "user_ldap"
     # First-party.
     "cdsp"
     "user_saml"
