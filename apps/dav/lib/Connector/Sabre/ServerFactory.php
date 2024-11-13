@@ -32,8 +32,9 @@
 namespace OCA\DAV\Connector\Sabre;
 
 use OCA\DAV\AppInfo\PluginManager;
+use OCA\DAV\CalDAV\DefaultCalendarValidator;
 use OCA\DAV\DAV\ViewOnlyPlugin;
-use OCA\DAV\Files\BrowserErrorPagePlugin;
+use OCA\DAV\Files\ErrorPagePlugin;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\Folder;
 use OCP\Files\Mount\IMountManager;
@@ -120,9 +121,7 @@ class ServerFactory {
 			$server->addPlugin(new \OCA\DAV\Connector\Sabre\FakeLockerPlugin());
 		}
 
-		if (BrowserErrorPagePlugin::isBrowserRequest($this->request)) {
-			$server->addPlugin(new BrowserErrorPagePlugin());
-		}
+		$server->addPlugin(new ErrorPagePlugin($this->request, $this->config));
 
 		// wait with registering these until auth is handled and the filesystem is setup
 		$server->on('beforeMethod:*', function () use ($server, $objectTree, $viewCallBack) {
@@ -191,7 +190,8 @@ class ServerFactory {
 							$server,
 							$objectTree,
 							$this->databaseConnection,
-							$this->userSession->getUser()
+							$this->userSession->getUser(),
+							\OC::$server->get(DefaultCalendarValidator::class),
 						)
 					)
 				);

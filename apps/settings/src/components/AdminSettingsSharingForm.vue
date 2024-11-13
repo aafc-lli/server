@@ -62,9 +62,9 @@
 				<NcCheckboxRadioSwitch :checked.sync="settings.enforceLinksPassword" :disabled="!settings.enableLinkPasswordByDefault">
 					{{ t('settings', 'Enforce password protection') }}
 				</NcCheckboxRadioSwitch>
-				<label v-if="settings.passwordExcludedGroupsFeatureEnabled" class="sharing__labeled-entry sharing__input">
+				<label v-if="settings.enforceLinksPasswordExcludedGroupsEnabled" class="sharing__labeled-entry sharing__input">
 					<span>{{ t('settings', 'Exclude groups from password requirements') }}</span>
-					<NcSettingsSelectGroup v-model="settings.passwordExcludedGroups"
+					<NcSettingsSelectGroup v-model="settings.enforceLinksPasswordExcludedGroups"
 						style="width: 100%"
 						:disabled="!settings.enforceLinksPassword || !settings.enableLinkPasswordByDefault" />
 				</label>
@@ -167,10 +167,10 @@
 					{{ t('settings', 'If autocompletion "same group" and "phone number integration" are enabled a match in either is enough to show the user.') }}
 				</em>
 				<NcCheckboxRadioSwitch :checked.sync="settings.restrictUserEnumerationToGroup">
-					{{ t('settings', 'Allow username autocompletion to users within the same groups and limit system address books to users in the same groups') }}
+					{{ t('settings', 'Restrict account name autocompletion and system address book access to users within the same groups') }}
 				</NcCheckboxRadioSwitch>
 				<NcCheckboxRadioSwitch :checked.sync="settings.restrictUserEnumerationToPhone">
-					{{ t('settings', 'Allow username autocompletion to users based on phone number integration') }}
+					{{ t('settings', 'Restrict account name autocompletion to users based on phone number integration') }}
 				</NcCheckboxRadioSwitch>
 			</fieldset>
 
@@ -212,10 +212,11 @@ import {
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { loadState } from '@nextcloud/initial-state'
+import { snakeCase } from 'lodash'
 import { defineComponent } from 'vue'
+import debounce from 'debounce'
 
 import SelectSharingPermissions from './SelectSharingPermissions.vue'
-import { snakeCase, debounce } from 'lodash'
 
 interface IShareSettings {
 	enabled: boolean
@@ -232,8 +233,8 @@ interface IShareSettings {
 	restrictUserEnumerationFullMatchEmail: boolean
 	restrictUserEnumerationFullMatchIgnoreSecondDN: boolean
 	enforceLinksPassword: boolean
-	passwordExcludedGroups: string[]
-	passwordExcludedGroupsFeatureEnabled: boolean
+	enforceLinksPasswordExcludedGroups: string[]
+	enforceLinksPasswordExcludedGroupsEnabled: boolean
 	onlyShareWithGroupMembers: boolean
 	onlyShareWithGroupMembersExcludeGroupList: string[]
 	defaultExpireDate: boolean

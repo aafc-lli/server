@@ -29,12 +29,15 @@ import PQueue from 'p-queue'
 // This is the processing queue. We only want to allow 3 concurrent requests
 let queue: PQueue
 
+// Maximum number of concurrent operations
+const MAX_CONCURRENCY = 5
+
 /**
  * Get the processing queue
  */
 export const getQueue = () => {
 	if (!queue) {
-		queue = new PQueue({ concurrency: 3 })
+		queue = new PQueue({ concurrency: MAX_CONCURRENCY })
 	}
 	return queue
 }
@@ -70,7 +73,8 @@ export const canDownload = (nodes: Node[]) => {
 }
 
 export const canCopy = (nodes: Node[]) => {
-	// For now the only restriction is that a shared file
-	// cannot be copied if the download is disabled
+	// a shared file cannot be copied if the download is disabled
+	// it can be copied if the user has at least read permissions
 	return canDownload(nodes)
+		&& !nodes.some(node => node.permissions === Permission.NONE)
 }

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-named-as-default-member */
 /**
  * @copyright Copyright (c) 2023 John Molakvoæ <skjnldsv@protonmail.com>
  *
@@ -22,7 +23,8 @@
 import { basename } from 'path'
 import { expect } from '@jest/globals'
 import { Folder, Navigation, getNavigation } from '@nextcloud/files'
-import * as eventBus from '@nextcloud/event-bus'
+import { CancelablePromise } from 'cancelable-promise'
+import eventBus from '@nextcloud/event-bus'
 import * as initialState from '@nextcloud/initial-state'
 
 import { action } from '../actions/favoriteAction'
@@ -56,15 +58,16 @@ describe('Favorites view definition', () => {
 
 	test('Default empty favorite view', () => {
 		jest.spyOn(eventBus, 'subscribe')
-		jest.spyOn(favoritesService, 'getContents').mockReturnValue(Promise.resolve({ folder: {} as Folder, contents: [] }))
+		jest.spyOn(favoritesService, 'getContents').mockReturnValue(CancelablePromise.resolve({ folder: {} as Folder, contents: [] }))
 
 		registerFavoritesView()
 		const favoritesView = Navigation.views.find(view => view.id === 'favorites')
 		const favoriteFoldersViews = Navigation.views.filter(view => view.parent === 'favorites')
 
-		expect(eventBus.subscribe).toHaveBeenCalledTimes(2)
+		expect(eventBus.subscribe).toHaveBeenCalledTimes(3)
 		expect(eventBus.subscribe).toHaveBeenNthCalledWith(1, 'files:favorites:added', expect.anything())
 		expect(eventBus.subscribe).toHaveBeenNthCalledWith(2, 'files:favorites:removed', expect.anything())
+		expect(eventBus.subscribe).toHaveBeenNthCalledWith(3, 'files:node:renamed', expect.anything())
 
 		// one main view and no children
 		expect(Navigation.views.length).toBe(1)
@@ -87,7 +90,7 @@ describe('Favorites view definition', () => {
 			{ fileid: 3, path: '/foo/bar' },
 		]
 		jest.spyOn(initialState, 'loadState').mockReturnValue(favoriteFolders)
-		jest.spyOn(favoritesService, 'getContents').mockReturnValue(Promise.resolve({ folder: {} as Folder, contents: [] }))
+		jest.spyOn(favoritesService, 'getContents').mockReturnValue(CancelablePromise.resolve({ folder: {} as Folder, contents: [] }))
 
 		registerFavoritesView()
 		const favoritesView = Navigation.views.find(view => view.id === 'favorites')
@@ -130,7 +133,7 @@ describe('Dynamic update of favourite folders', () => {
 	test('Add a favorite folder creates a new entry in the navigation', async () => {
 		jest.spyOn(eventBus, 'emit')
 		jest.spyOn(initialState, 'loadState').mockReturnValue([])
-		jest.spyOn(favoritesService, 'getContents').mockReturnValue(Promise.resolve({ folder: {} as Folder, contents: [] }))
+		jest.spyOn(favoritesService, 'getContents').mockReturnValue(CancelablePromise.resolve({ folder: {} as Folder, contents: [] }))
 
 		registerFavoritesView()
 		const favoritesView = Navigation.views.find(view => view.id === 'favorites')
@@ -159,7 +162,7 @@ describe('Dynamic update of favourite folders', () => {
 		jest.spyOn(eventBus, 'emit')
 		jest.spyOn(eventBus, 'subscribe')
 		jest.spyOn(initialState, 'loadState').mockReturnValue([{ fileid: 42, path: '/Foo/Bar' }])
-		jest.spyOn(favoritesService, 'getContents').mockReturnValue(Promise.resolve({ folder: {} as Folder, contents: [] }))
+		jest.spyOn(favoritesService, 'getContents').mockReturnValue(CancelablePromise.resolve({ folder: {} as Folder, contents: [] }))
 
 		registerFavoritesView()
 		let favoritesView = Navigation.views.find(view => view.id === 'favorites')
@@ -194,5 +197,43 @@ describe('Dynamic update of favourite folders', () => {
 		expect(Navigation.views.length).toBe(1)
 		expect(favoritesView).toBeDefined()
 		expect(favoriteFoldersViews.length).toBe(0)
+	})
+
+	test('Renaming a favorite folder updates the navigation', async () => {
+		jest.spyOn(eventBus, 'emit')
+		jest.spyOn(initialState, 'loadState').mockReturnValue([])
+		jest.spyOn(favoritesService, 'getContents')
+			.mockReturnValue(CancelablePromise.resolve({ folder: {} as Folder, contents: [] }))
+
+		registerFavoritesView()
+		const favoritesView = Navigation.views.find(view => view.id === 'favorites')
+		const favoriteFoldersViews = Navigation.views.filter(view => view.parent === 'favorites')
+
+		// one main view and no children
+		expect(Navigation.views.length).toBe(1)
+		expect(favoritesView).toBeDefined()
+		expect(favoriteFoldersViews.length).toBe(0)
+
+		// Create new folder to favorite
+		const folder = new Folder({
+			id: 1,
+			source: 'http://localhost/remote.php/dav/files/admin/Foo/Bar',
+			owner: 'admin',
+		})
+
+		// Exec the action
+		await action.exec(folder, favoritesView, '/')
+		expect(eventBus.emit).toHaveBeenNthCalledWith(1, 'files:favorites:added', folder)
+
+		// Create a folder with the same id but renamed
+		const renamedFolder = new Folder({
+			id: 1,
+			source: 'http://localhost/remote.php/dav/files/admin/Foo/Bar.renamed',
+			owner: 'admin',
+		})
+
+		// Exec the rename action
+		eventBus.emit('files:node:renamed', renamedFolder)
+		expect(eventBus.emit).toHaveBeenNthCalledWith(2, 'files:node:renamed', renamedFolder)
 	})
 })

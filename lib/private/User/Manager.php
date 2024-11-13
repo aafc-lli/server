@@ -99,7 +99,8 @@ class Manager extends PublicEmitter implements IUserManager {
 
 	public function __construct(IConfig $config,
 		ICacheFactory $cacheFactory,
-		IEventDispatcher $eventDispatcher) {
+		IEventDispatcher $eventDispatcher,
+		private LoggerInterface $logger) {
 		$this->config = $config;
 		$this->cache = new WithLocalCache($cacheFactory->createDistributed('user_backend_map'));
 		$cachedUsers = &$this->cachedUsers;
@@ -236,7 +237,7 @@ class Manager extends PublicEmitter implements IUserManager {
 		$result = $this->checkPasswordNoLogging($loginName, $password);
 
 		if ($result === false) {
-			\OCP\Server::get(LoggerInterface::class)->warning('Login failed: \''. $loginName .'\' (Remote IP: \''. \OC::$server->getRequest()->getRemoteAddress(). '\')', ['app' => 'core']);
+			$this->logger->warning('Login failed: \''. $loginName .'\' (Remote IP: \''. \OC::$server->getRequest()->getRemoteAddress(). '\')', ['app' => 'core']);
 		}
 
 		return $result;
@@ -309,7 +310,10 @@ class Manager extends PublicEmitter implements IUserManager {
 		}
 
 		uasort($users, function (IUser $a, IUser $b) {
-			return strcasecmp($a->getUID(), $b->getUID());
+			// !CDSP: Sort user lists by last name, case insensitive, rather than UID.
+			$aParts = explode($a->getDisplayName(), ' ');
+			$bParts = explode($b->getDisplayName(), ' ');
+			return strcasecmp($aParts[count($aParts) - 1], $bParts[count($bParts) - 1]);
 		});
 		return $users;
 	}
@@ -354,11 +358,16 @@ class Manager extends PublicEmitter implements IUserManager {
 		if ($search !== '') {
 			$users = array_filter(
 				$users,
-				fn (IUser $user): bool =>
-					mb_stripos($user->getUID(), $search) !== false ||
-					mb_stripos($user->getDisplayName(), $search) !== false ||
-					mb_stripos($user->getEMailAddress() ?? '', $search) !== false,
-			);
+				function (IUser $user) use ($search): bool {
+					try {
+						return mb_stripos($user->getUID(), $search) !== false ||
+						mb_stripos($user->getDisplayName(), $search) !== false ||
+						mb_stripos($user->getEMailAddress() ?? '', $search) !== false;
+					} catch (NoUserException $ex) {
+						$this->logger->error('Error while filtering disabled users', ['exception' => $ex, 'userUID' => $user->getUID()]);
+						return false;
+					}
+				});
 		}
 
 		$tempLimit = ($limit === null ? null : $limit + $offset);

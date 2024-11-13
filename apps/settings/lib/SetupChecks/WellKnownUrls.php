@@ -70,7 +70,7 @@ class WellKnownUrls implements ISetupCheck {
 
 		foreach ($urls as [$verb,$url,$validStatuses,$checkCustomHeader]) {
 			$works = null;
-			foreach ($this->runRequest($verb, $url, ['httpErrors' => false, 'options' => ['allow_redirects' => ['track_redirects' => true]]]) as $response) {
+			foreach ($this->runRequest($verb, $url, ['httpErrors' => false, 'options' => ['allow_redirects' => ['track_redirects' => true]]], removeWebroot: true) as $response) {
 				// Check that the response status matches
 				$works = in_array($response->getStatusCode(), $validStatuses);
 				// and (if needed) the custom Nextcloud header is set
@@ -81,7 +81,7 @@ class WellKnownUrls implements ISetupCheck {
 					if (!$works && $response->getStatusCode() === 401) {
 						$redirectHops = explode(',', $response->getHeader('X-Guzzle-Redirect-History'));
 						$effectiveUri = end($redirectHops);
-						$works = str_ends_with($effectiveUri, '/remote.php/dav/');
+						$works = str_ends_with(rtrim($effectiveUri, '/'), '/remote.php/dav');
 					}
 				}
 				// Skip the other requests if one works

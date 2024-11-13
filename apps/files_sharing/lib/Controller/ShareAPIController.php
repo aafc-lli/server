@@ -188,6 +188,27 @@ class ShareAPIController extends OCSController {
 		if ($isOwnShare) {
 			$result['item_permissions'] = $node->getPermissions();
 		}
+		
+		// If we're on the recipient side, the node permissions
+		// are bound to the share permissions. So we need to
+		// adjust the permissions to the share permissions if necessary.
+		if (!$isOwnShare) {
+			$result['item_permissions'] = $share->getPermissions();
+
+			// For some reason, single files share are forbidden to have the delete permission
+			// since we have custom methods to check those, let's adjust straight away.
+			// DAV permissions does not have that issue though.
+			if ($this->canDeleteShare($share) || $this->canDeleteShareFromSelf($share)) {
+				$result['item_permissions'] |= Constants::PERMISSION_DELETE;
+			}
+			if ($this->canEditShare($share)) {
+				$result['item_permissions'] |= Constants::PERMISSION_UPDATE;
+			}
+		}
+
+		// See MOUNT_ROOT_PROPERTYNAME dav property
+		$result['is-mount-root'] = $node->getInternalPath() === '';
+		$result['mount-type'] = $node->getMountPoint()->getMountType();
 
 		$result['mimetype'] = $node->getMimetype();
 		$result['has_preview'] = $this->previewManager->isAvailable($node);
@@ -260,7 +281,7 @@ class ShareAPIController extends OCSController {
 			$result['token'] = $share->getToken();
 		} elseif ($share->getShareType() === IShare::TYPE_CIRCLE) {
 			// getSharedWith() returns either "name (type, owner)" or
-			// "name (type, owner) [id]", depending on the Circles app version.
+			// "name (type, owner) [id]", depending on the Teams app version.
 			$hasCircleId = (substr($share->getSharedWith(), -1) === ']');
 
 			$result['share_with_displayname'] = $share->getSharedWithDisplayName();
@@ -549,7 +570,7 @@ class ShareAPIController extends OCSController {
 	 * @param string $publicUpload If public uploading is allowed
 	 * @param string $password Password for the share
 	 * @param string|null $sendPasswordByTalk Send the password for the share over Talk
-	 * @param ?string $expireDate The expiry date of the share in the user's timezone (UTC) at 00:00.
+	 * @param ?string $expireDate The expiry date of the share in the user's timezone at 00:00.
 	 *                If $expireDate is not supplied or set to `null`, the system default will be used.
 	 * @param string $note Note for the share
 	 * @param string $label Label for the share (only used in link and email)
@@ -762,14 +783,14 @@ class ShareAPIController extends OCSController {
 			$share->setPermissions($permissions);
 		} elseif ($shareType === IShare::TYPE_CIRCLE) {
 			if (!\OC::$server->getAppManager()->isEnabledForUser('circles') || !class_exists('\OCA\Circles\ShareByCircleProvider')) {
-				throw new OCSNotFoundException($this->l->t('You cannot share to a Circle if the app is not enabled'));
+				throw new OCSNotFoundException($this->l->t('You cannot share to a Team if the app is not enabled'));
 			}
 
 			$circle = \OCA\Circles\Api\v1\Circles::detailsCircle($shareWith);
 
-			// Valid circle is required to share
+			// Valid team is required to share
 			if ($circle === null) {
-				throw new OCSNotFoundException($this->l->t('Please specify a valid circle'));
+				throw new OCSNotFoundException($this->l->t('Please specify a valid team'));
 			}
 			$share->setSharedWith($shareWith);
 			$share->setPermissions($permissions);
@@ -1101,8 +1122,11 @@ class ShareAPIController extends OCSController {
 		// generate node list for each parent folders
 		/** @var Node[] $nodes */
 		$nodes = [];
-		while ($node->getPath() !== $basePath) {
+		while (true) {
 			$node = $node->getParent();
+			if ($node->getPath() === $basePath) {
+				break;
+			}
 			$nodes[] = $node;
 		}
 
@@ -1652,9 +1676,6 @@ class ShareAPIController extends OCSController {
 			throw new \Exception('Invalid date. Format must be YYYY-MM-DD');
 		}
 
-		// Use server timezone to store the date
-		$date->setTimezone(new \DateTimeZone(date_default_timezone_get()));
-
 		return $date;
 	}
 
@@ -1964,7 +1985,7 @@ class ShareAPIController extends OCSController {
 		// EMAIL SHARES
 		$mailShares = $this->shareManager->getSharesBy($this->currentUser, IShare::TYPE_EMAIL, $path, $reshares, -1, 0);
 
-		// CIRCLE SHARES
+		// TEAM SHARES
 		$circleShares = $this->shareManager->getSharesBy($this->currentUser, IShare::TYPE_CIRCLE, $path, $reshares, -1, 0);
 
 		// TALK SHARES

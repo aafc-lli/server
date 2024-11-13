@@ -36,13 +36,17 @@
  *
  */
 
+use OC\Authentication\Token\IProvider;
 use OC\User\LoginException;
+use OCP\Authentication\Exceptions\InvalidTokenException;
+use OCP\Authentication\Exceptions\WipeTokenException;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IGroupManager;
 use OCP\ISession;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\Server;
+use OCP\Session\Exceptions\SessionNotAvailableException;
 use OCP\User\Events\BeforeUserLoggedInEvent;
 use OCP\User\Events\UserLoggedInEvent;
 use Psr\Log\LoggerInterface;
@@ -197,6 +201,22 @@ class OC_User {
 
 				$userSession->createSessionToken($request, $uid, $uid, $password);
 				$userSession->createRememberMeToken($userSession->getUser());
+
+				if (empty($password)) {
+					$tokenProvider = \OC::$server->get(IProvider::class);
+					try {
+						$token = $tokenProvider->getToken($userSession->getSession()->getId());
+						$token->setScope([
+							'password-unconfirmable' => true,
+							'filesystem' => true,
+						]);
+						$tokenProvider->updateToken($token);
+					} catch (InvalidTokenException|WipeTokenException|SessionNotAvailableException) {
+						// swallow the exceptions as we do not deal with them here
+						// simply skip updating the token when is it missing
+					}
+				}
+
 				// setup the filesystem
 				OC_Util::setupFS($uid);
 				// first call the post_login hooks, the login-process needs to be

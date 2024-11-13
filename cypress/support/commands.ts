@@ -19,12 +19,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-/* eslint-disable n/no-unpublished-import */
+// eslint-disable-next-line n/no-extraneous-import
+import type { AxiosResponse } from 'axios'
+
 import axios from '@nextcloud/axios'
 import { addCommands, User } from '@nextcloud/cypress'
 import { basename } from 'path'
 
 // Add custom commands
+import '@testing-library/cypress/add-commands'
 import 'cypress-if'
 import 'cypress-wait-until'
 addCommands()
@@ -33,10 +36,12 @@ addCommands()
 declare global {
 	// eslint-disable-next-line @typescript-eslint/no-namespace
 	namespace Cypress {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 		interface Chainable<Subject = any> {
 			/**
 			 * Enable or disable a given user
 			 */
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			enableUser(user: User, enable?: boolean): Cypress.Chainable<Cypress.Response<any>>,
 
 			/**
