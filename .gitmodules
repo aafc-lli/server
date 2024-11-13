@@ -4,6 +4,9 @@
 [submodule "apps/cdsp"]
 	path = apps/cdsp
 	url = https://github.com/aafc-lli/cdsp.git
+[submodule "apps/auto_groups"]
+	path = apps/auto_groups
+	url = https://github.com/stjosh/autogroups
 [submodule "apps/activity"]
 	path = apps/activity
 	url = https://github.com/nextcloud/activity.git
