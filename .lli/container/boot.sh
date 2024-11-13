@@ -16,9 +16,16 @@ enable_apps=(
     "files_external"
     # Third-party.
     "activity"
+    "comments"
     "announcementcenter"
+    "comments"
     "notifications"
     "group_everyone"
+    "files_downloadactivity"
+    "logreader"
+    "user_retention"
+    "password_policy"
+    "privacy"
     # First-party.
     "cdsp"
     "user_saml"
@@ -153,6 +160,13 @@ conf_occ_sys overwritehost         $NCLOUD_HOST
 conf_occ_sys overwrite.cli.url     $service_url
 
 conf_occ_sys projects.enabled      "true"
+
+conf_occ_sys mail_from_address     $MAIL_FROM_ADDRESS
+conf_occ_sys mail_smtpmode         smtp
+conf_occ_sys mail_sendmailmode     smtp
+conf_occ_sys mail_domain           $MAIL_DOMAIN
+conf_occ_sys mail_smtphost         $MAIL_SMTPHOST
+conf_occ_sys mail_smtpport         $MAIL_SMTPPORT
 
 conf_occ_sys installed             "true"
 
