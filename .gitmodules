@@ -19,3 +19,18 @@
 [submodule "apps/user_saml"]
 	path = apps/user_saml
 	url = https://github.com/aafc-lli/cdsp-saml
+[submodule "apps/group_everyone"]
+	path = apps/group_everyone
+	url = https://github.com/icewind1991/group_everyone.git
+[submodule "apps/privacy"]
+	path = apps/privacy
+	url = https://github.com/nextcloud/privacy
+[submodule "apps/logreader"]
+	path = apps/logreader
+	url = https://github.com/nextcloud/logreader
+[submodule "apps/password_policy"]
+	path = apps/password_policy
+	url = https://github.com/nextcloud/password_policy
+[submodule "apps/user_retention"]
+	path = apps/user_retention
+	url = https://github.com/nextcloud/user_retention
