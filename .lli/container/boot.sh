@@ -158,6 +158,13 @@ conf_occ_sys overwritewebroot      $NCLOUD_PATH_PREFIX
 conf_occ_sys overwritehost         $NCLOUD_HOST
 conf_occ_sys overwrite.cli.url     $service_url
 
+conf_occ_sys mail_from_address     $MAIL_FROM_ADDRESS
+conf_occ_sys mail_smtpmode         smtp
+conf_occ_sys mail_sendmailmode     smtp
+conf_occ_sys mail_domain           $MAIL_DOMAIN
+conf_occ_sys mail_smtphost         $MAIL_SMTPHOST
+conf_occ_sys mail_smtpport         $MAIL_SMTPPORT
+
 conf_occ_sys installed             "true"
 
 echo "Configuring enabled apps..."
