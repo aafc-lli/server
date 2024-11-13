@@ -8,7 +8,6 @@ disable_apps=(
     "dashboard"
     "user_status"
     "files_reminders"
-    "comments"
 )
 enable_apps=(
     # Default.
@@ -17,8 +16,13 @@ enable_apps=(
     # Third-party.
     "activity"
     "announcementcenter"
+    "comments"
     "notifications"
     "group_everyone"
+    "logreader"
+    "user_retention"
+    "password_policy"
+    "privacy"
     # First-party.
     "cdsp"
     "user_saml"
