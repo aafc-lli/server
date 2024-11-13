@@ -15,10 +15,12 @@ enable_apps=(
     "files_external"
     # Third-party.
     "activity"
+    "comments"
     "announcementcenter"
     "comments"
     "notifications"
     "group_everyone"
+    "files_downloadactivity"
     "logreader"
     "user_retention"
     "password_policy"
