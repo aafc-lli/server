@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Boot script. Installs, launches, and configures NextCloud.
+# Boot script. Installs, launches, and configures Nextcloud.
 
 # ---- App configuration.
 disable_apps=(
@@ -80,12 +80,26 @@ echo
 # TODO: I don't think there's a way to remove this duplication, but worth
 # investigating...
 echo "Checking install state..."
-existing_users_check=$(cat << EOF | psql --tuples-only --no-align $postgres_conn_str
+is_installed=0
+table_present=$(cat << EOF | psql -tA $postgres_conn_str
+SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'oc_users'
+);
+EOF
+)
+if [[ $table_present == "t" ]]; then
+    existing_user=$(cat << EOF | psql -tA $postgres_conn_str
 SELECT uid FROM oc_users LIMIT 1;
 EOF
 )
+    if [[ $existing_user != "" ]]; then
+        echo "Existing install detected."
+        is_installed=1
+    fi
+fi
 
-if [[ $NCLOUD_INSTALL == "1" && $existing_users_check == "" ]]; then
+if [[ $NCLOUD_INSTALL == "1" ]] && ! (( $is_installed )); then
     echo "Triggering install..."
     curl \
         -sS \
@@ -101,7 +115,7 @@ if [[ $NCLOUD_INSTALL == "1" && $existing_users_check == "" ]]; then
         -F dbpass-clone=$POSTGRES_PW \
         -F dbname=$POSTGRES_DB \
         -F dbhost=$POSTGRES_HOST \
-        $service_url
+        http://localhost
 else
     echo "Marking existing install..."
     cat << EOF > server/config/config.php
@@ -165,8 +179,15 @@ conf_occ_sys mail_from_address     $MAIL_FROM_ADDRESS
 conf_occ_sys mail_smtpmode         smtp
 conf_occ_sys mail_sendmailmode     smtp
 conf_occ_sys mail_domain           $MAIL_DOMAIN
-conf_occ_sys mail_smtphost         $MAIL_SMTPHOST
-conf_occ_sys mail_smtpport         $MAIL_SMTPPORT
+conf_occ_sys mail_smtphost         $MAIL_SMTP_HOST
+conf_occ_sys mail_smtpport         $MAIL_SMTP_PORT
+if [[ $MAIL_SMTP_USER != "" ]]; then
+    conf_occ_sys mail_smtpauth     "1"
+    conf_occ_sys mail_smtpsecure   "tls"
+    conf_occ_sys mail_smptauthtype "LOGIN"
+    conf_occ_sys mail_smtpname     $MAIL_SMTP_USER
+    conf_occ_sys mail_smtppassword $MAIL_SMTP_PW
+fi
 
 conf_occ_sys installed             "true"
 

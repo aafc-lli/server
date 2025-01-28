@@ -11,7 +11,8 @@ ENV PHP_VER php$PHP_VER_NUM
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install base dependencies and add PHP PPA.
-RUN apt-get update && \
+RUN echo rev1 && \
+    apt-get update && \
     apt-get install -y software-properties-common jq && \
     add-apt-repository ppa:ondrej/php && \
     apt-get update
@@ -128,4 +129,10 @@ RUN touch /ncloud/ncloud.log && \
 RUN apt-get install -y dos2unix
 RUN dos2unix *.sh
 
-CMD ./boot.sh
+# TEMPORARY WORKAROUND TO OUT OF DATE ESAS REGISTRATIONS ######
+COPY container/patch-saml-settings.py patch-saml-settings.py
+
+CMD python3 ./patch-saml-settings.py && ./boot.sh
+###############################################################
+
+#CMD ./boot.sh
